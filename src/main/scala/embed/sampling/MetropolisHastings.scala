@@ -1,11 +1,11 @@
 package embed.sampling
 
-import embed.dist.Pdf
+import embed.dist.Distribution
 
 /**
   * Created by takun on 01/08/2017.
   */
-class MetropolisHastings(q:Pdf,p:Pdf,epoch:Int) extends Sampling{
+class MetropolisHastings(q:Distribution,p:Distribution,epoch:Int) extends Sampling{
   def apply() = {
     var xt = 0.0
     var t = 0
