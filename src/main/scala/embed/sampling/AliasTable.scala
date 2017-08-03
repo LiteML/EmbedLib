@@ -1,6 +1,6 @@
 package embed.sampling
 
-import java.util.ArrayDeque
+import java.util
 import scala.collection.mutable.ArrayBuffer
 /**
   * Sample Multinomial Distribution in O(1) with O(K) Build Time
@@ -14,8 +14,8 @@ class AliasTable(val wordTopicCount:Array[(Int,Int)]) extends IntSampling{
   private final val probability:Array[Float] = wordTopicCount.map(f => f._2/sum*length)
 
   def build():Unit = {
-    val small = new ArrayDeque[Int]()
-    val large = new ArrayDeque[Int]()
+    val small = new util.ArrayDeque[Int]()
+    val large = new util.ArrayDeque[Int]()
     (0 until length) foreach {i=>
       if(probability(i) < 1.0) small.add(i) else large.add(i)
     }
@@ -40,7 +40,7 @@ object AliasTable {
     val aliasTable = new AliasTable(wordTopicCount)
     aliasTable.build()
     val z = ArrayBuffer[Int]()
-    (0 until 1000000) foreach {i=>
+    (0 until 1000000) foreach { i =>
       z.append(aliasTable.apply())
     }
     println(z.count(f=>f==1))
