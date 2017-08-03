@@ -7,9 +7,10 @@ import embed.sampling.BoxMuller
   */
 class GaussianDist(mean:Double, variance:Double) extends Distribution{
 
+  val std = math.sqrt(variance)
   val r = new BoxMuller
 
   def random: Double = r()
-  def apply(x:Double) = ???
+  def apply(x:Double) = math.exp(-math.pow(x - mean, 2.0) / (2 * variance)) / math.sqrt(2 * Math.PI * std)
 
 }

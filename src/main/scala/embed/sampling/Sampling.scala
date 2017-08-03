@@ -1,11 +1,11 @@
 package embed.sampling
 
-import scala.util.Random
+import java.util.Random
 
 /**
   * Created by takun on 01/08/2017.
   */
-trait Sampling {
+trait Sampling extends Serializable{
   private var seed = System.currentTimeMillis()
   val r = new Random(seed)
   def apply():Double

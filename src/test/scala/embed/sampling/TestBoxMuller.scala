@@ -6,7 +6,7 @@ package embed.sampling
 object TestBoxMuller {
 
   def main(args: Array[String]): Unit = {
-    val r = new BoxMuller(1L)
+    val r = new BoxMuller()
     1 to 1000 foreach{
       i => println(r()+",")
     }
