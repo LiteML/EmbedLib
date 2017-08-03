@@ -1,6 +1,5 @@
 package embed.sampling
 
-import embed.dist.Dice
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.{SparkConf, SparkContext}
 

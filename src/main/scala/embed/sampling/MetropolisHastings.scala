@@ -5,7 +5,7 @@ import embed.dist.Distribution
 /**
   * Created by takun on 01/08/2017.
   */
-class MetropolisHastings(p:Distribution, q:Distribution, epoch:Int) extends Sampling{
+class MetropolisHastings(p:Distribution, q:Distribution, epoch:Int) extends DoubleSampling{
   def apply() = {
     var xt = 0.0
     var t = 0

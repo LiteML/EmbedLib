@@ -1,6 +1,6 @@
 package embed.tmp
 
-import embed.dist.Dice
+import embed.sampling.Dice
 import org.apache.spark.rdd.RDD
 import org.apache.spark.storage.StorageLevel
 
@@ -50,8 +50,10 @@ class test {
         data.zipPartitions(block) {
           case (it, b) =>
             it.foreach{
-              case (word, count) =>
+              doc => doc.foreach{
+                case (word, count) =>
                 // mh sampling
+              }
             }
             it
         }

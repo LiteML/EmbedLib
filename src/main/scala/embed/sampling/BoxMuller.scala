@@ -3,7 +3,7 @@ package embed.sampling
 /**
   * Created by takun on 01/08/2017.
   */
-class BoxMuller extends Sampling{
+class BoxMuller extends DoubleSampling{
   def apply() = {
     val u1 = r.nextDouble
     val u2 = r.nextDouble
