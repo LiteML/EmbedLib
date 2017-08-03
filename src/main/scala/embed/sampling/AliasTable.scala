@@ -6,8 +6,8 @@ import scala.collection.mutable.ArrayBuffer
 import scala.util.Random
 
 /**
-  * Created by chris on 8/2/17.
   * Sample Multinomial Distribution in O(1) with O(K) Build Time
+  * Created by chris on 8/2/17.
   * @param wordTopicCount Array[(topic, count)]
   */
 class AliasTable(val wordTopicCount:Array[(Int,Int)]) extends Serializable{
