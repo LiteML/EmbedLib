@@ -7,7 +7,7 @@ import scala.util.Random
 
 /**
   * Created by chris on 8/2/17.
-  *
+  * Sample Multinomial Distribution in O(1) with O(K) Build Time
   * @param wordTopicCount Array[(topic, count)]
   */
 class AliasTable(val wordTopicCount:Array[(Int,Int)]) {
@@ -15,10 +15,9 @@ class AliasTable(val wordTopicCount:Array[(Int,Int)]) {
   private final val alias = Array.ofDim[Int](length)
   private final val rand = Random
   private final val sum:Double = wordTopicCount.map(_._2).sum.toDouble
-  private final val prob:Array[Double] = wordTopicCount.map(f => f._2/sum)
-  private final val probability = prob.map(_*length)
+  private final val probability:Array[Double] = wordTopicCount.map(f => f._2/sum*length)
 
-  def build() = {
+  def build():Unit = {
     val small = new ArrayDeque[Int]()
     val large = new ArrayDeque[Int]()
     (0 until length) foreach {i=>
