@@ -34,8 +34,7 @@ class AliasTable(val wordTopicCount:Array[(Int,Int)]) extends Serializable{
   }
   def draw():Int = {
     val column = rand.nextInt(length)
-    val coinToss = rand.nextDouble() < probability(column)
-    if(coinToss) wordTopicCount(column)._1 else wordTopicCount(alias(column))._1
+    if(rand.nextDouble() < probability(column)) wordTopicCount(column)._1 else wordTopicCount(alias(column))._1
   }
 }
 
