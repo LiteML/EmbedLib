@@ -10,7 +10,7 @@ import scala.util.Random
   * Sample Multinomial Distribution in O(1) with O(K) Build Time
   * @param wordTopicCount Array[(topic, count)]
   */
-class AliasTable(val wordTopicCount:Array[(Int,Int)]) {
+class AliasTable(val wordTopicCount:Array[(Int,Int)]) extends Serializable{
   private final val length:Int = wordTopicCount.length
   private final val alias = Array.ofDim[Int](length)
   private final val rand = Random
@@ -41,15 +41,16 @@ class AliasTable(val wordTopicCount:Array[(Int,Int)]) {
 
 object AliasTable {
   def main(args: Array[String]): Unit = {
-    val wordTopicCount = Array((1,100),(5,200),(3,1000))
+    val wordTopicCount = Array((1,100),(5,200),(3,1000),(7,400))
     val aliasTable = new AliasTable(wordTopicCount)
     aliasTable.build()
     val z = ArrayBuffer[Int]()
-    (0 until 100000000) foreach {i=>
+    (0 until 1000000) foreach {i=>
       z.append(aliasTable.draw())
     }
     println(z.count(f=>f==1))
     println(z.count(f=>f==5))
     println(z.count(f=>f==3))
+    println(z.count(f=>f==7))
   }
 }
