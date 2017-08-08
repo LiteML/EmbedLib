@@ -32,7 +32,7 @@ object Block2 {
         it.map{
           doc => doc.map{
             case(word,count) =>
-              word -> Entity2(Array.fill(count)(dice()), Array.fill(MH,count)(dice()))
+              word -> Entity2(Array.fill(count)(dice()), Array.fill(count,MH)(dice()))
           }
         }
     }
@@ -138,7 +138,7 @@ class test2 {
         val updateMcmc = byColumn.map{doc =>
           doc.map{case (word, entity) =>
             val alias = aliasMap(word)
-            (word, Entity2(entity.z, Array.fill(MH,entity.indicies)(alias.apply())))
+            (word, Entity2(entity.z, Array.fill(entity.indicies,MH)(alias.apply())))
           }
         }
 
@@ -174,6 +174,5 @@ class test2 {
         }
         block = updateMcmc
     }
-
   }
 }
