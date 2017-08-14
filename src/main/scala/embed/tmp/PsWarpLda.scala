@@ -69,13 +69,14 @@ object PsWarpLda {
         val wordsOfPartitions = buf.flatMap(f=>f).distinct.toArray
 
         //通过这些word 从ps里面将pSMatrix对应的行pull下来
-        val wordsDistributions = pSMatrix.pullByRows(wordsDistributions).zip(wordsOfPartitions).map{
+        val wordsDistributions = pSMatrix.pullByRows(wordsOfPartitions).zip(wordsOfPartitions).map{
 
           //从psMatrix拉下来行，对每一个词建立aliastable，并记录下wordTopicDistribution
-          case (wordDistribution, word) =>
-            val topicDistribution = wordDistribution.zipWithIndex.filter(_._1 != 0).map(f =>(f._2,f._1))
-            val aliasTable = new AliasTable(topicDistribution)
-            (word,(aliasTable,topicDistribution))
+          case (topicDistribution, word) =>
+            // sparse topic Distribution
+            val sparseTopicDistribution = topicDistribution.zipWithIndex.filter(_._1 != 0).map(f =>(f._2,f._1))
+            val aliasTable = new AliasTable(sparseTopicDistribution)
+            (word,(aliasTable, topicDistribution))
         }.toMap[Int,(AliasTable,Array[Int])]
 
         buf.map{tokens => // tokens这里指带的是一个token的topic， token对应的词用下标表示（tokens是文章的topic集合）
@@ -143,6 +144,7 @@ case class PSVector{
 object Initialization {
 
   // Initialize the topic Matrix
+  //w ->多少个不同的词，k -> 多少个不同的主题
   def topicInitialization(w:Int, k:Int) = {
     val dice = new Dice(k)
     Array.fill[Int](w, k)(dice.apply())
