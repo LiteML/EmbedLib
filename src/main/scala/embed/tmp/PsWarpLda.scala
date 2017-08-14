@@ -83,6 +83,8 @@ object PsWarpLda {
           val documentTopicAssignments = tokens
           val documentSize: Int = tokens.length
           val sampler = new Sampler(config, mhSteps, r)
+
+          //sampler需要根据每一个document定制
           sampler.documentTopicAssignments = documentTopicAssignments
           sampler.documentSize = documentSize
           (0 until tokens.length) map{i =>
