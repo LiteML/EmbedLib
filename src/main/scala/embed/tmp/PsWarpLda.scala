@@ -1,3 +1,146 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 package embed.tmp
 
 import java.util.Random
@@ -85,7 +228,15 @@ object PsWarpLda {
           val sampler = new Sampler(config, mhSteps, r)
 
           //sampler需要根据每一个document定制
+          //每一个 token -被assgin了一个topic
           sampler.documentTopicAssignments = documentTopicAssignments
+
+          //每一个topic在该document里面有多少个
+          sampler.documentCounts = (0 until topic) map{ i =>
+            documentTopicAssignments.count(f => f == i)
+          }.toArray
+
+          //document的size
           sampler.documentSize = documentSize
           (0 until tokens.length) map{i =>
             // 从每一个partition的wordsDistribution Count table 中取出来每一个词对应的alias table 和 topic 分布
