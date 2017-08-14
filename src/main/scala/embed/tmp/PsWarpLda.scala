@@ -108,7 +108,7 @@ object PsWarpLda {
               //更新word - topic table
               pSMatrix.incrementAndFlush(i, wordCounts)
               //更新global topic count
-              pSVector.incrementAndFlush(i,globalCounts)
+              pSVector.incrementAndFlush(0,globalCounts)
             }
             z //更新本地的D*V 表
         }
