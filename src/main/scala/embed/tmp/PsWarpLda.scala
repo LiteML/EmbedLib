@@ -232,9 +232,9 @@ object PsWarpLda {
           sampler.documentTopicAssignments = documentTopicAssignments
 
           //每一个topic在该document里面有多少个
-          sampler.documentCounts = (0 until topic) map{ i =>
+          sampler.documentCounts = for(i <-0 until topic) yield {i =>
             documentTopicAssignments.count(f => f == i)
-          }.toArray
+          }
 
           //document的size
           sampler.documentSize = documentSize
