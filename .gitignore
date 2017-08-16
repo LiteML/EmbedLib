@@ -8,5 +8,5 @@ target/
 lib_managed/
 bin/
 project/
-lib/
+lib/*
 
