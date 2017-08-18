@@ -1,4 +1,4 @@
-package embed.lda.model
+package embed.lda.spark
 
 import org.apache.spark.ml.clustering.LocalLDAModel
 
