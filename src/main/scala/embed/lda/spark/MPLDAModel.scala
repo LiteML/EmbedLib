@@ -23,7 +23,7 @@ object MPLDAModel {
         val topicMatrix= wc2Tm(path)
         new LocalLDAModel(
             Matrices.dense(confMap("vocabSize").toInt,confMap("k").toInt,topicMatrix),//topicMatrix
-            Vectors.dense(confMap.get("docConcentration").toString.split(",").map(_.toDouble)),//docConcentration
+            Vectors.dense(confMap("docConcentration").split(",").map(_.toDouble)),//docConcentration
             confMap("topicConcentration").toDouble//topicConcentration
         )
     }
