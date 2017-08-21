@@ -13,14 +13,14 @@ object MPLDAModel {
     val sparkConf = new SparkConf()
     val sc = new SparkContext(sparkConf)
     //load the word count matrix to topic matrix
-    def wc2Tm(path:String): Matrix = ???
+    def wc2Tm(path:String): Array[Double] = ???
     def loadModel(path:String): LocalLDAModel = {
         val conf = sc.textFile(path+"/Configuration")
         var confMap=new mutable.HashMap[String,String]()
         conf.foreach(line=>{
             confMap.put(line.split("=")(0).trim(),line.split("=")(1).trim())
         })
-        val topicMatrix= sc.textFile(path+"/word_topic").flatMap(line=>{line.split(" ").map(_.toDouble)}).collect()
+        val topicMatrix= wc2Tm(path)
         new LocalLDAModel(
             Matrices.dense(confMap("vocabSize").toInt,confMap("k").toInt,topicMatrix),//topicMatrix
             Vectors.dense(confMap.get("docConcentration").toString.split(",").map(_.toDouble)),//docConcentration
