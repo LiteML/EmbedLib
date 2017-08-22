@@ -60,7 +60,7 @@ class WTokens (n_words:Int, n_docs:Int)  {
           wcnt(wid) -= 1
           wcnt(wid)
         }
-          start += 1
+          start -= 1
       }
     }
   }
