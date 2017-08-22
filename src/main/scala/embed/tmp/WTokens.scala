@@ -51,12 +51,12 @@ class WTokens (n_words:Int, n_docs:Int)  {
       accDoc(i+1) = accDoc(i) + docLens(i)
     }
 
-    var start = 0
-    (0 until n_docs) foreach{d =>
-      val doc = docs(d)
-      (0 until doc.len) foreach{ w =>
-        val wid = doc.wids(w)
-        inverseMatrix(start) = ws(wid) + {
+    var start = n_tokens - 1
+    (n_docs until 0 by -1) foreach{d =>
+      val doc = docs(d - 1)
+      (doc.len until 0 by -1) foreach{ w =>
+        val wid = doc.wids(w - 1)
+        inverseMatrix(start - w + 1) = ws(wid) + {
           wcnt(wid) -= 1
           wcnt(wid)
         }
