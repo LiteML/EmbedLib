@@ -56,7 +56,7 @@ class WTokens (n_words:Int, n_docs:Int)  {
       val doc = docs(d - 1)
       (doc.len until 0 by -1) foreach{ w =>
         val wid = doc.wids(w - 1)
-        inverseMatrix(start - w + 1) = ws(wid) + {
+        inverseMatrix(start) = ws(wid) + {
           wcnt(wid) -= 1
           wcnt(wid)
         }
