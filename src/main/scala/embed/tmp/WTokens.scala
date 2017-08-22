@@ -16,6 +16,7 @@ class WTokens (n_words:Int, n_docs:Int)  {
   var n_tokens:Int = _
   var inverseMatrix:Array[Int] = _
   var accDoc:Array[Int] = _
+  var mhSteps:Array[Byte] = _
 
 
   def build(docs:Array[Document],K:Int,mh:Int) = {
@@ -35,6 +36,7 @@ class WTokens (n_words:Int, n_docs:Int)  {
       }
     }
     this.topics = Array.ofDim[Int](n_tokens)
+    this.mhSteps = Array.ofDim[Byte](n_tokens)
     this.inverseMatrix = Array.ofDim[Int](n_tokens)
     //word count
     ws(0) = 0
