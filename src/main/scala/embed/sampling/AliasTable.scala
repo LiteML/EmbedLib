@@ -5,13 +5,13 @@ import scala.collection.mutable.ArrayBuffer
 /**
   * Sample Multinomial Distribution in O(1) with O(K) Build Time
   * Created by chris on 8/2/17.
-  * @param wordTopicCount Array[(topic, count)]
+  * @param wordTopicCount Array[(count, topic)]
   */
 class AliasTable(val wordTopicCount:Array[(Int,Int)]) extends IntSampling{
   private final val length:Int = wordTopicCount.length
   private final val alias = Array.ofDim[Int](length)
-  private final val sum:Float = wordTopicCount.map(_._2).sum.toFloat
-  private final val probability:Array[Float] = wordTopicCount.map(f => f._2/sum*length)
+  private final val sum:Float = wordTopicCount.map(_._1).sum.toFloat
+  private final val probability:Array[Float] = wordTopicCount.map(f => f._1/sum*length)
 
   def build():Unit = {
     val small = new util.ArrayDeque[Int]()
@@ -30,13 +30,13 @@ class AliasTable(val wordTopicCount:Array[(Int,Int)]) extends IntSampling{
   }
   def apply():Int = {
     val column = r.nextInt(length)
-    if(r.nextDouble() < probability(column)) wordTopicCount(column)._1 else wordTopicCount(alias(column))._1
+    if(r.nextDouble() < probability(column)) wordTopicCount(column)._2 else wordTopicCount(alias(column))._2
   }
 }
 
 object AliasTable {
   def main(args: Array[String]): Unit = {
-    val wordTopicCount = Array((1,100),(5,200),(3,1000),(7,400))
+    val wordTopicCount = Array((100,1),(200,1),(1000,3),(400,4))
     val aliasTable = new AliasTable(wordTopicCount)
     aliasTable.build()
     val z = ArrayBuffer[Int]()
