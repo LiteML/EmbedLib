@@ -139,6 +139,7 @@ class Sampler(var data: WTokens, var model: LDAModel) {
           di += 1
         }
       }
+      data.nnz(d) = dk.count(f=>f != 0).toShort
       d += 1
     }
   }

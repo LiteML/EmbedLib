@@ -16,12 +16,14 @@ class WTokens (val n_words:Int, val n_docs:Int)  {
   var inverseMatrix:Array[Int] = _
   var accDoc:Array[Int] = _
   var mhSteps:Array[Byte] = _
+  var nnz:Array[Short] = _
 
 
   def build(docs:Array[Document],K:Int, mh:Int) = {
     val wcnt = Array.ofDim[Int](n_words)
     this.ws = Array.ofDim[Int](n_words + 1)
     this.accDoc = Array.ofDim[Int](n_docs + 1)
+    this.nnz = Array.ofDim[Short](n_docs)
     docLens = Array.ofDim[Int](n_docs)
     docIds = Array.ofDim[Long](n_docs)
     n_tokens = 0
