@@ -52,6 +52,7 @@ class Sampler(var data: WTokens, var model: LDAModel) {
           }
           wk(tt) -= 1
           nk(tt) -= 1
+          update.plusBy(tt, -1)
 
           var s: Int = tt
           var t: Int = 0
@@ -64,7 +65,6 @@ class Sampler(var data: WTokens, var model: LDAModel) {
             s = t
           }
 
-          update.plusBy(tt, -1)
           wk(tt) += 1
           nk(tt) += 1
           data.topics(wi) = tt
