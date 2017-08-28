@@ -373,7 +373,7 @@ class Trainer(ctx:TaskContext, model:LDAModel,
     val rr = model.wtMat.getRows(index, 1000)
 
     for (row <- start until end) {
-      val x = rr.get(row).get
+      val x = rr(row)
       val len = x.size()
       val sb = new StringBuilder
       sb.append(x.getRowId + ":")
