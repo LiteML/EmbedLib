@@ -24,16 +24,16 @@ class WTokens (val n_words:Int, val n_docs:Int)  {
     this.ws = Array.ofDim[Int](n_words + 1)
     this.accDoc = Array.ofDim[Int](n_docs + 1)
     this.nnz = Array.ofDim[Short](n_docs)
-    docLens = Array.ofDim[Int](n_docs)
-    docIds = Array.ofDim[Long](n_docs)
+    this.docLens = Array.ofDim[Int](n_docs)
+    this.docIds = Array.ofDim[Long](n_docs)
     n_tokens = 0
-    (0 until docs.length) foreach {d=>
+    docs.indices foreach {d=>
       val doc = docs(d)
+      n_tokens += doc.len
+      docLens(d) = doc.len
+      docIds(d) = doc.docId
       (0 until doc.len) foreach {w =>
         wcnt(doc.wids(w)) += 1
-        n_tokens += doc.len
-        docLens(d) = doc.len
-        docIds(d) = doc.docId
       }
     }
     this.topics = Array.ofDim[Int](n_tokens)
