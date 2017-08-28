@@ -54,6 +54,7 @@ class Sampler(var data: WTokens, var model: LDAModel) {
           nk(tt) -= 1
           update.plusBy(tt, -1)
 
+
           var s: Int = tt
           var t: Int = 0
           var pai: Float = 1f
