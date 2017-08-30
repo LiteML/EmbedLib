@@ -291,26 +291,14 @@ class Trainer(ctx:TaskContext, model:LDAModel,
       }
     }
 
-    val keys = new mutable.HashSet[PartitionKey]()
-
-    val iter = pkeys.toIterator
-    while (iter.hasNext) {
-      keys.add(iter.next())
-    }
-
     // copy nk to each sampler
     for (i <- 0 until model.threadNum) queue.add(new Sampler(data, model).set(nk))
 
-    while (keys.nonEmpty) {
-      val dkeys = keys.iterator
-      while (dkeys.hasNext) {
-        val pkey = dkeys.next()
-        val sampler = queue.take()
-        pkey match {
-          case key: PartitionKey => executor.execute(new Task(sampler, pkey))
-          case _ => throw new AngelException("should by PartCSRResult")
-          }
-          keys.remove(pkey)
+    pkeys.foreach{pkey =>
+      val sampler = queue.take()
+      pkey match {
+        case key: PartitionKey => executor.execute(new Task(sampler, pkey))
+        case _ => throw new AngelException("should by PartCSRResult")
       }
     }
 
