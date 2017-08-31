@@ -12,8 +12,8 @@ public class PartDocResult {
     public static PartitionKey[] getPartitionKeyList(int Docs, int Parts) {
         PartitionKey[] keys = new PartitionKey[Parts];
         int len = Docs/Parts;
-        for(int i = 0; i < Parts; i++) {
-            int endRow = Math.min((i+1)*len - 1, Docs);
+        for(int i = 0; i <= Parts; i++) {
+            int endRow = Math.min((i+1)*len, Docs);
             keys[i] = new PartitionKey(i,0,i*len,0,endRow,0);
         }
         return keys;
