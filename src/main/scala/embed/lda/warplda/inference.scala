@@ -39,7 +39,7 @@ class Trainer(ctx:TaskContext, model:LDAModel,
   val LOG = LogFactory.getLog(classOf[Trainer])
   val pkeys = PSAgentContext.get().getMatrixPartitionRouter.
     getPartitionKeyList(model.wtMat.getMatrixId())
-  val dKeys:Array[Int] = (0 until data.n_docs).toArray
+  val dKeys:Int = data.n_docs
 
   Collections.shuffle(pkeys)
 
@@ -127,12 +127,9 @@ class Trainer(ctx:TaskContext, model:LDAModel,
     // copy nk to each sampler
     for (i <- 0 until model.threadNum) queue.add(new Sampler(data, model).set(nk))
 
-    dKeys.foreach{pkey =>
+    (0 until dKeys).foreach{dkey =>
       val sampler = queue.take()
-      pkey match {
-        case key: Int => executor.execute(new Task(sampler, pkey))
-        case _ => throw new AngelException("should by PartCSRResult")
-      }
+      executor.execute(new Task(sampler, dkey))
     }
 
     for (i <- 0 until model.threadNum) queue.take()
@@ -381,7 +378,7 @@ class Trainer(ctx:TaskContext, model:LDAModel,
   }
 
 
-  def scheduleDocSample(pkeys: Array[Int]): Boolean = {
+  def scheduleDocSample(dKeys:Int): Boolean = {
     class Task(sampler: Sampler, pkey: Int) extends Thread {
       override def run(): Unit = {
         sampler.docSample(pkey)
@@ -392,12 +389,9 @@ class Trainer(ctx:TaskContext, model:LDAModel,
     // copy nk to each sampler
     for (i <- 0 until model.threadNum) queue.add(new Sampler(data, model).set(nk))
 
-    pkeys.foreach{pkey =>
+    (0 until dKeys).foreach{dkey =>
       val sampler = queue.take()
-      pkey match {
-        case key: Int => executor.execute(new Task(sampler, key))
-        case _ => throw new AngelException("should by PartCSRResult")
-      }
+       executor.execute(new Task(sampler, dkey))
     }
 
     var error = false
