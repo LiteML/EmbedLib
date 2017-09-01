@@ -101,53 +101,47 @@ class Sampler(var data: WTokens, var model: LDAModel) {
     }
   }
 
-  def docSample(pkey: PartitionKey):Unit = {
-    val ds: Int = pkey.getStartRow
-    val de: Int = pkey.getEndRow
+  def docSample(d: Int):Unit = {
     val rand: Random = new Random(System.currentTimeMillis)
-    var d = ds
-    while(d < de) {
-      docTopicCount(d)
-      val len = data.docLens(d)
-      var di: Int = data.accDoc(d)
-      while(di < data.accDoc(d + 1)){
-        breakable{
-          val wi = data.inverseMatrix(di)
-          var tt = data.topics(wi)
-          if (dk(tt) <= 0) {
-            Sampler.LOG.error(String.format("Error nk[%d] = %d for doc %d", tt, nk(tt), d))
-            error = true
-            break
-          }
-          dk(tt) -= 1
-          nk(tt) -= 1
-
-          var s: Int = tt
-          var t: Int = 0
-          var pai: Float = 1f
-          val steps = math.min(data.mhSteps(wi).toInt, mh)
-
-          (0 until steps) foreach { i =>
-            t = data.mhProp(i)(wi)
-            pai = math.min(1f, (dk(t) + alpha) * (nk(s) + vbeta) / ((dk(s) + alpha) * (nk(t) + vbeta)))
-            if (rand.nextFloat() < pai) tt = t
-            s = t
-          }
-          dk(tt) += 1
-          nk(tt) += 1
-          data.topics(wi) = tt
-
-          (0 until mh) foreach{ i=>
-            data.mhProp(i)(wi) = if(rand.nextFloat < len / (len + dalpha)){
-              data.topics(data.inverseMatrix(d + rand.nextInt(len)))
-            } else rand.nextInt(K)
-          }
-          di += 1
+    docTopicCount(d)
+    val len = data.docLens(d)
+    var di: Int = data.accDoc(d)
+    while(di < data.accDoc(d + 1)){
+      breakable{
+        val wi = data.inverseMatrix(di)
+        var tt = data.topics(wi)
+        if (dk(tt) <= 0) {
+          Sampler.LOG.error(String.format("Error nk[%d] = %d for doc %d", tt, nk(tt), d))
+          error = true
+          break
         }
+        dk(tt) -= 1
+        nk(tt) -= 1
+
+        var s: Int = tt
+        var t: Int = 0
+        var pai: Float = 1f
+        val steps = math.min(data.mhSteps(wi).toInt, mh)
+
+        (0 until steps) foreach { i =>
+          t = data.mhProp(i)(wi)
+          pai = math.min(1f, (dk(t) + alpha) * (nk(s) + vbeta) / ((dk(s) + alpha) * (nk(t) + vbeta)))
+          if (rand.nextFloat() < pai) tt = t
+          s = t
+        }
+        dk(tt) += 1
+        nk(tt) += 1
+        data.topics(wi) = tt
+
+        (0 until mh) foreach{ i=>
+          data.mhProp(i)(wi) = if(rand.nextFloat < len / (len + dalpha)){
+              data.topics(data.inverseMatrix(d + rand.nextInt(len)))
+          } else rand.nextInt(K)
+        }
+        di += 1
       }
-      data.nnz(d) = dk.count(f=>f != 0).toShort
-      d += 1
     }
+    data.nnz(d) = dk.count(f=>f != 0).toShort
   }
 
 

@@ -24,7 +24,7 @@ import com.tencent.angel.utils.HdfsUtil
 import com.tencent.angel.worker.storage.DataBlock
 import com.tencent.angel.worker.task.TaskContext
 import embed.lda.LDAModel
-import embed.lda.warplda.get.{PartCSRResult, PartDocResult}
+import embed.lda.warplda.get.PartCSRResult
 import org.apache.commons.logging.LogFactory
 import org.apache.commons.math.special.Gamma
 import org.apache.hadoop.fs.Path
@@ -39,7 +39,7 @@ class Trainer(ctx:TaskContext, model:LDAModel,
   val LOG = LogFactory.getLog(classOf[Trainer])
   val pkeys = PSAgentContext.get().getMatrixPartitionRouter.
     getPartitionKeyList(model.wtMat.getMatrixId())
-  val dKeys = PartDocResult.getPartitionKeyList(data.n_docs,pkeys.size())
+  val dKeys:Array[Int] = (0 until data.n_docs).toArray
 
   Collections.shuffle(pkeys)
 
@@ -117,7 +117,7 @@ class Trainer(ctx:TaskContext, model:LDAModel,
 
 
   def sampleForDocInference():Unit = {
-    class Task(sampler: Sampler, pkey: PartitionKey) extends Thread {
+    class Task(sampler: Sampler, pkey: Int) extends Thread {
       override def run(): Unit = {
         sampler.docSample(pkey)
         queue.add(sampler)
@@ -130,7 +130,7 @@ class Trainer(ctx:TaskContext, model:LDAModel,
     dKeys.foreach{pkey =>
       val sampler = queue.take()
       pkey match {
-        case key: PartitionKey => executor.execute(new Task(sampler, pkey))
+        case key: Int => executor.execute(new Task(sampler, pkey))
         case _ => throw new AngelException("should by PartCSRResult")
       }
     }
@@ -381,8 +381,8 @@ class Trainer(ctx:TaskContext, model:LDAModel,
   }
 
 
-  def scheduleDocSample(pkeys: Array[PartitionKey]): Boolean = {
-    class Task(sampler: Sampler, pkey: PartitionKey) extends Thread {
+  def scheduleDocSample(pkeys: Array[Int]): Boolean = {
+    class Task(sampler: Sampler, pkey: Int) extends Thread {
       override def run(): Unit = {
         sampler.docSample(pkey)
         queue.add(sampler)
@@ -395,7 +395,7 @@ class Trainer(ctx:TaskContext, model:LDAModel,
     pkeys.foreach{pkey =>
       val sampler = queue.take()
       pkey match {
-        case key: PartitionKey => executor.execute(new Task(sampler, pkey))
+        case key: Int => executor.execute(new Task(sampler, key))
         case _ => throw new AngelException("should by PartCSRResult")
       }
     }
