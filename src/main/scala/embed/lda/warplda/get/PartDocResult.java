@@ -13,7 +13,7 @@ public class PartDocResult {
         PartitionKey[] keys = new PartitionKey[Parts];
         int len = Docs/Parts;
         for(int i = 0; i <= Parts; i++) {
-            if(i * len == Docs) {
+            if(i * len >= Docs) {
                 break;
             }
             int endRow = Math.min((i+1)*len, Docs);
