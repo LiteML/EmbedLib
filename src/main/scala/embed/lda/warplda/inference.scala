@@ -110,7 +110,7 @@ class Trainer(ctx:TaskContext, model:LDAModel,
   def inference(n_iters: Int): Unit = {
     for (i <- 1 to n_iters) {
       sampleForWordInference()
-      sampleForWordInference()
+      sampleForDocInference()
       ctx.incIteration()
     }
   }
