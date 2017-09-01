@@ -490,8 +490,9 @@ class Trainer(ctx:TaskContext, model:LDAModel,
       sb.append(data.docIds(d))
       val sparseDk = dk.zipWithIndex.filter(_._1 != 0)
       val len = sparseDk.length
-      for (i <- 0 until len)
-        sb.append(s" ${sparseDk(1)}:${sparseDk(0)}")
+      sparseDk.foreach{s =>
+        sb.append(s" ${s._2}:${s._1}")
+      }
       sb.append("\n")
       out.write(sb.toString().getBytes("UTF-8"))
     }
