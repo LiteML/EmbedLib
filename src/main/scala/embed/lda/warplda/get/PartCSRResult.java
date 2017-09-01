@@ -124,5 +124,6 @@ public class PartCSRResult extends PartitionGetResult {
 
   public void reset() {
     this.readerIdx = 0;
+    this.buf.resetReaderIndex();
   }
 }
