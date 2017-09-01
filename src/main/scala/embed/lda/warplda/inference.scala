@@ -25,7 +25,7 @@ import com.tencent.angel.worker.storage.DataBlock
 import com.tencent.angel.worker.task.TaskContext
 import embed.lda.LDAModel
 import embed.lda.warplda.get.PartCSRResult
-import org.apache.commons.logging.LogFactory
+import org.apache.commons.logging.{Log, LogFactory}
 import org.apache.commons.math.special.Gamma
 import org.apache.hadoop.fs.Path
 
@@ -36,19 +36,21 @@ import scala.collection.mutable
   */
 class Trainer(ctx:TaskContext, model:LDAModel,
              data:WTokens) extends MLLearner(ctx){
-  val LOG = LogFactory.getLog(classOf[Trainer])
-  val pkeys = PSAgentContext.get().getMatrixPartitionRouter.
+  val LOG:Log = LogFactory.getLog(classOf[Trainer])
+  val pkeys: util.List[PartitionKey]= PSAgentContext.get().getMatrixPartitionRouter.
     getPartitionKeyList(model.wtMat.getMatrixId())
   val dKeys:Int = data.n_docs
+
 
   Collections.shuffle(pkeys)
 
   // Hyper parameters
-  val alpha = model.alpha
-  val beta  = model.beta
-  val lgammaBeta = Gamma.logGamma(beta)
-  val lgammaAlpha = Gamma.logGamma(alpha)
-  val lgammaAlphaSum = Gamma.logGamma(alpha * model.K)
+  val alpha:Float = model.alpha
+  val beta:Float  = model.beta
+  val lgammaBeta:Double = Gamma.logGamma(beta)
+  val lgammaAlpha:Double = Gamma.logGamma(alpha)
+  val lgammaAlphaSum:Double = Gamma.logGamma(alpha * model.K)
+
 
   val nk = new Array[Int](model.K)
 
@@ -67,12 +69,12 @@ class Trainer(ctx:TaskContext, model:LDAModel,
     scheduleInit()
 
     val ll = likelihood
-    LOG.info(s"ll=${ll}")
+    LOG.info(s"ll=$ll")
     globalMetrics.metrics(LOG_LIKELIHOOD, ll)
     ctx.incIteration()
   }
 
-  def reset(epoch: Int) = {
+  def reset(epoch: Int):Unit = {
     LOG.info(s"start reset")
     model.tMat.getRow(0)
     if (ctx.getTaskIndex == 0) {
@@ -238,7 +240,7 @@ class Trainer(ctx:TaskContext, model:LDAModel,
     ll
   }
 
-  def scheduleDocllh(n_docs: Int) = {
+  def scheduleDocllh(n_docs: Int):Double = {
     val results = new LinkedBlockingQueue[Double]()
     class Task(index: AtomicInteger) extends Thread {
       private var ll = 0.0
