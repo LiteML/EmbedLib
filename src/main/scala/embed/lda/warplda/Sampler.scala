@@ -62,7 +62,7 @@ class Sampler(var data: WTokens, var model: LDAModel) {
           (0 until steps) foreach { i =>
             breakable{
               t = data.mhProp(i)(wi)
-              if(wk(s) < 0 || wk(t) < 0 ){
+              if(wk(s) < 0 || wk(t) < 0) {
                 break
               }
               pai = math.min(1f, (wk(t) + beta) * (nk(s) + vbeta) / ((wk(s) + beta) * (nk(t) + vbeta)))
