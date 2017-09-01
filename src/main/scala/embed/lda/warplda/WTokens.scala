@@ -1,9 +1,38 @@
 package embed.lda.warplda
+import java.lang.Long
 
+import scala.collection.mutable.ArrayBuffer
 /**
   * Created by chris on 8/22/17.
   */
-case class Document(docId:Long, len:Int, wids:Array[Int])
+class Document() {
+  var docId:Long = _
+  var len:Int = _
+  var wids:Array[Int] = _
+
+  def this(docId:Long, len:Int, wids:Array[Int]){
+    this()
+    this.docId = docId
+    this.len = len
+    this.wids = wids
+  }
+
+  def this(str:String) {
+    this()
+    val parts = str.split("\t")
+    this.docId = Long.parseLong(parts(0))
+    this.wids = parts(1).split(" ").map(f => Integer.parseInt(f))
+    this.len = wids.length
+  }
+
+  def this(docId:Long, wids:Array[Int]) {
+    this()
+    this.docId = docId
+    this.wids = wids
+    this.len = wids.length
+  }
+
+}
 
 
 class WTokens (val n_words:Int, val n_docs:Int)  {
@@ -19,7 +48,7 @@ class WTokens (val n_words:Int, val n_docs:Int)  {
   var nnz:Array[Short] = _
 
 
-  def build(docs:Array[Document],K:Int, mh:Int) = {
+  def build(docs:ArrayBuffer[Document],K:Int, mh:Int):Unit = {
     val wcnt = Array.ofDim[Int](n_words)
     this.ws = Array.ofDim[Int](n_words + 1)
     this.accDoc = Array.ofDim[Int](n_docs + 1)

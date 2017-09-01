@@ -85,6 +85,104 @@ class Trainer(ctx:TaskContext, model:LDAModel,
     LOG.info(s"finish reset")
   }
 
+  def initForInference(): Unit = {
+    class Task(sampler: Sampler, pkey: PartitionKey) extends Thread {
+      override def run(): Unit = {
+        sampler.initForInference(pkey)
+        queue.add(sampler)
+      }
+    }
+
+    for (i <- 0 until model.threadNum) queue.add(new Sampler(data, model))
+
+    val iter = pkeys.iterator()
+    while (iter.hasNext) {
+      val sampler = queue.take()
+      executor.execute(new Task(sampler, iter.next()))
+    }
+
+    for (i <- 0 until model.threadNum) queue.take()
+
+    model.tMat.clock(false).get()
+    ctx.incIteration()
+  }
+
+  def inference(n_iters: Int): Unit = {
+    for (i <- 1 to n_iters) {
+      sampleForWordInference()
+      sampleForWordInference()
+      ctx.incIteration()
+    }
+  }
+
+
+  def sampleForDocInference():Unit = {
+    class Task(sampler: Sampler, pkey: PartitionKey) extends Thread {
+      override def run(): Unit = {
+        sampler.docSample(pkey)
+        queue.add(sampler)
+      }
+    }
+
+    // copy nk to each sampler
+    for (i <- 0 until model.threadNum) queue.add(new Sampler(data, model).set(nk))
+
+    dKeys.foreach{pkey =>
+      val sampler = queue.take()
+      pkey match {
+        case key: PartitionKey => executor.execute(new Task(sampler, pkey))
+        case _ => throw new AngelException("should by PartCSRResult")
+      }
+    }
+
+    for (i <- 0 until model.threadNum) queue.take()
+    model.tMat.clock(false).get()
+  }
+
+  def sampleForWordInference(): Unit = {
+    class Task(sampler: Sampler, pkey: PartitionKey, csr: PartCSRResult) extends Thread {
+      override def run(): Unit = {
+        sampler.wordInference(pkey, csr)
+        queue.add(sampler)
+      }
+    }
+
+    val client = PSAgentContext.get().getMatrixTransportClient
+    val iter = pkeys.iterator()
+    val func = new GetPartFunc(null)
+    val futures = new mutable.HashMap[PartitionKey, Future[PartitionGetResult]]()
+    while (iter.hasNext) {
+      val pkey = iter.next()
+      val param = new PartitionGetParam(model.wtMat.getMatrixId, pkey)
+      val future = client.get(func, param)
+      futures.put(pkey, future)
+    }
+
+    // copy nk to each sampler
+    for (i <- 0 until model.threadNum) queue.add(new Sampler(data, model).set(nk))
+
+    while (futures.nonEmpty) {
+      val keys = futures.keySet.iterator
+      while (keys.hasNext) {
+        val pkey = keys.next()
+        val future = futures(pkey)
+        if (future.isDone) {
+          val sampler = queue.take()
+          future.get() match {
+            case csr: PartCSRResult => executor.execute(new Task(sampler, pkey, csr))
+            case _ => throw new AngelException("should by PartCSRResult")
+          }
+          futures.remove(pkey)
+        }
+      }
+    }
+
+    for (i <- 0 until model.threadNum) queue.take()
+
+    model.tMat.clock(false).get()
+  }
+
+
 
   def scheduleReset(): Unit = {
     class Task(sampler: Sampler, pkey: PartitionKey) extends Thread {
