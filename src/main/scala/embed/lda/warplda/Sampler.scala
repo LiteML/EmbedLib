@@ -60,10 +60,15 @@ class Sampler(var data: WTokens, var model: LDAModel) {
           var pai: Float = 1f
           val steps = math.min(data.mhSteps(wi).toInt, mh)
           (0 until steps) foreach { i =>
-            t = data.mhProp(i)(wi)
-            pai = math.min(1f, (wk(t) + beta) * (nk(s) + vbeta) / ((wk(s) + beta) * (nk(t) + vbeta)))
-            if (rand.nextFloat() < pai) tt = t
-            s = t
+            breakable{
+              t = data.mhProp(i)(wi)
+              if(wk(s) < 0 || wk(t) < 0 ){
+                break
+              }
+              pai = math.min(1f, (wk(t) + beta) * (nk(s) + vbeta) / ((wk(s) + beta) * (nk(t) + vbeta)))
+              if (rand.nextFloat() < pai) tt = t
+              s = t
+            }
           }
 
           wk(tt) += 1
@@ -244,11 +249,17 @@ class Sampler(var data: WTokens, var model: LDAModel) {
           var pai: Float = 1f
           val steps = math.min(data.mhSteps(wi).toInt, mh)
           (0 until steps) foreach { i =>
-            t = data.mhProp(i)(wi)
-            pai = math.min(1f, (wk(t) + beta) * (nk(s) + vbeta) / ((wk(s) + beta) * (nk(t) + vbeta)))
-            if (rand.nextFloat() < pai) tt = t
-            s = t
+            breakable{
+              t = data.mhProp(i)(wi)
+              if(wk(t) < 0 || wk(s) < 0) {
+                break
+              }
+              pai = math.min(1f, (wk(t) + beta) * (nk(s) + vbeta) / ((wk(s) + beta) * (nk(t) + vbeta)))
+              if (rand.nextFloat() < pai) tt = t
+              s = t
+            }
           }
+
           wk(tt) += 1
           nk(tt) += 1
 
