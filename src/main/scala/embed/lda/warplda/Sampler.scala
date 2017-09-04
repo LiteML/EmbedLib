@@ -46,7 +46,7 @@ class Sampler(var data: WTokens, var model: LDAModel) {
         breakable {
           var tt: Int = data.topics(wi)
           if (wk(tt) <= 0) {
-            Sampler.LOG.error(String.format("Error wk[%d] = %d for word %d", tt, wk(tt), w))
+            Sampler.LOG.error(s"Error wk[$tt] = ${wk(tt)} for word $w")
             error = true
             break
           }
@@ -111,7 +111,7 @@ class Sampler(var data: WTokens, var model: LDAModel) {
         val wi = data.inverseMatrix(di)
         var tt = data.topics(wi)
         if (dk(tt) <= 0) {
-          Sampler.LOG.error(String.format("Error nk[%d] = %d for doc %d", tt, nk(tt), d))
+          Sampler.LOG.error(s"Error nk[$tt] = ${nk(tt)} for doc $d")
           error = true
           break
         }
@@ -232,7 +232,7 @@ class Sampler(var data: WTokens, var model: LDAModel) {
         breakable {
           var tt: Int = data.topics(wi)
           if (wk(tt) <= 0) {
-            Sampler.LOG.error(String.format("Error wk[%d] = %d for word %d", tt, wk(tt), w))
+            Sampler.LOG.error(s"Error wk[$tt] = ${wk(tt)} for word $w")
             error = true
             break
           }
