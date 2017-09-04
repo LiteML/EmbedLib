@@ -70,14 +70,14 @@ class WTokens (val n_words:Int, val n_docs:Int)  {
     this.inverseMatrix = Array.ofDim[Int](n_tokens)
     //word count
     ws(0) = 0
-    (0 until n_words + 1) foreach{ i=>
+    (0 until n_words) foreach{ i=>
       ws(i+1) = ws(i) + wcnt(i)
     }
     this.topics = Array.ofDim[Int](n_tokens)
     this.mhProp = Array.ofDim[Int](mh,n_tokens)
     //doc count
     accDoc(0) = 0
-    (0 until n_docs + 1) foreach { i=>
+    (0 until n_docs) foreach { i=>
       accDoc(i+1) = accDoc(i) + docLens(i)
     }
 

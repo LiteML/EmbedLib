@@ -164,7 +164,7 @@ class Sampler(var data: WTokens, var model: LDAModel) {
           wi += 1
       }
       model.wtMat.increment(w, update)
-        w += 1
+      w += 1
     }
   }
 
