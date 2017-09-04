@@ -4,7 +4,6 @@ import com.tencent.angel.conf.AngelConf._
 import com.tencent.angel.ml.conf.MLConf
 import com.tencent.angel.ml.conf.MLConf._
 import com.tencent.angel.ml.feature.LabeledData
-import com.tencent.angel.ml.lda.LDAModel._
 import com.tencent.angel.ml.math.vector.{DenseDoubleVector, DenseIntVector}
 import com.tencent.angel.ml.model.{MLModel, PSModel}
 import com.tencent.angel.ml.predict.PredictResult
@@ -12,6 +11,7 @@ import com.tencent.angel.protobuf.generated.MLProtos.RowType
 import com.tencent.angel.worker.storage.DataBlock
 import com.tencent.angel.worker.task.TaskContext
 import org.apache.hadoop.conf.Configuration
+import LDAModel._
 
 
 /**
@@ -41,6 +41,7 @@ object LDAModel {
 
   // Beta value
   val BETA = "ml.lda.beta";
+  val MH = "ml.lda.mh";
 
   val SPLIT_NUM = "ml.lda.split.num"
 
@@ -70,7 +71,7 @@ class LDAModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel(co
   val saveDocTopic = conf.getBoolean(SAVE_DOC_TOPIC, false)
   val saveWordTopic = conf.getBoolean(SAVE_WORD_TOPIC, true)
 
-  val mh = conf.getInt(mh, 10)
+  val mh = conf.getInt(MH, 10)
 
   // Initializing model matrices
 
