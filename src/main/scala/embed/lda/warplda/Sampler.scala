@@ -28,7 +28,7 @@ class Sampler(var data: WTokens, var model: LDAModel) {
   var nk = new Array[Int](K)
   var wk = new Array[Int](K)
   var dk = new Array[Int](K)
-  val mh:Int =  LDAModel.mh
+  val mh:Int =  model.mh
   var error = false
 
   def wordSample(pkey: PartitionKey, csr: PartCSRResult): Unit = {
