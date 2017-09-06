@@ -31,7 +31,6 @@ class LDATrainTask(val ctx: TaskContext) extends BaseTask[LongWritable, Text, Te
   def run(ctx: TaskContext): Unit = {
     // Read documents
     var reader = ctx.getReader[LongWritable, Text]
-    reader.reset()
     val docs   = new ArrayBuffer[Document]()
     var did = 0
     var N = 0
@@ -44,6 +43,7 @@ class LDATrainTask(val ctx: TaskContext) extends BaseTask[LongWritable, Text, Te
         N += doc.len
       }
     }
+    reader.close()
 
     // Initializing LDA model
     val model = new LDAModel(ctx.getConf, ctx)

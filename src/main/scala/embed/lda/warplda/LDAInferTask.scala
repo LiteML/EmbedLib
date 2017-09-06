@@ -119,6 +119,7 @@ class LDAInferTask(val ctx: TaskContext) extends
       did += 1
       N += doc.len
     }
+    reader.close()
 
     val data = new WTokens(V, docs.length)
     data.build(docs, K, mh)
