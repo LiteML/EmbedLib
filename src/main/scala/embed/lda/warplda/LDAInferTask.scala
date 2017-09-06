@@ -7,10 +7,11 @@ import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.exception.AngelException
 import com.tencent.angel.ml.math.vector.DenseIntVector
 import com.tencent.angel.worker.task.{BaseTask, TaskContext}
+import embed.lda.LDAModel
 import org.apache.commons.logging.LogFactory
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.io.{LongWritable, Text}
-import embed.lda.LDAModel
+
 import scala.collection.mutable.ArrayBuffer
 
 /**

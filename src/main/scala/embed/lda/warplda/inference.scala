@@ -50,6 +50,8 @@ class Trainer(ctx:TaskContext, model:LDAModel,
   val lgammaBeta:Double = Gamma.logGamma(beta)
   val lgammaAlpha:Double = Gamma.logGamma(alpha)
   val lgammaAlphaSum:Double = Gamma.logGamma(alpha * model.K)
+  var ll:Double = 0
+  var nnz:Int = 0
 
 
   val nk = new Array[Int](model.K)
@@ -67,8 +69,7 @@ class Trainer(ctx:TaskContext, model:LDAModel,
   def train(train: DataBlock[LabeledData], vali: DataBlock[LabeledData]): MLModel = ???
   def initialize(): Unit = {
     scheduleInit()
-
-    val ll = likelihood
+    likelihood
     LOG.info(s"ll=$ll")
     globalMetrics.metrics(LOG_LIKELIHOOD, ll)
     ctx.incIteration()
@@ -231,16 +232,15 @@ class Trainer(ctx:TaskContext, model:LDAModel,
     ll
   }
 
-  def likelihood: Double = {
-    var ll = 0.0
+  def likelihood: Unit = {
     fetchNk
     if (ctx.getTaskIndex == 0)
       ll += computeWordLLHSummary + computeWordLLH
-    ll += scheduleDocllh(data.n_docs)
-    ll
+    ll -= nnz * Gamma.logGamma(alpha)
+    ll += data.n_docs * Gamma.logGamma(alpha * model.K)
   }
 
-  def scheduleDocllh(n_docs: Int):Double = {
+  /*def scheduleDocllh(n_docs: Int):Double = {
     val results = new LinkedBlockingQueue[Double]()
     class Task(index: AtomicInteger) extends Thread {
       private var ll = 0.0
@@ -272,7 +272,7 @@ class Trainer(ctx:TaskContext, model:LDAModel,
     ll += data.n_docs * Gamma.logGamma(alpha * model.K)
     ll
   }
-
+*/
 
   def fetchNk: Unit = {
     val row = model.tMat.getRow(0)
@@ -384,6 +384,11 @@ class Trainer(ctx:TaskContext, model:LDAModel,
     class Task(sampler: Sampler, pkey: Int) extends Thread {
       override def run(): Unit = {
         sampler.docSample(pkey)
+        (0 until model.K) foreach {j=>
+          ll += Gamma.logGamma(alpha + sampler.dk(j))
+          ll -= Gamma.logGamma(data.docLens(pkey) + alpha * model.K)
+        }
+        nnz += data.nnz(pkey)
         queue.add(sampler)
       }
     }
@@ -418,12 +423,13 @@ class Trainer(ctx:TaskContext, model:LDAModel,
     for (epoch <- 1 to n_iters) {
       // One epoch
       fetchNk
-
+      this.ll = 0d
+      this.nnz = 0
       var error = scheduleWordSample(pkeys)
       error = scheduleDocSample(dKeys)
 
       // calculate likelihood
-      val ll = likelihood
+      likelihood
       LOG.info(s"epoch=$epoch local likelihood=$ll")
 
       // submit to client

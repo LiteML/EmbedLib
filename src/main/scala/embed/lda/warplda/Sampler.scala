@@ -6,8 +6,8 @@ import java.util.Random
 import com.tencent.angel.PartitionKey
 import com.tencent.angel.exception.AngelException
 import embed.lda.warplda.get.PartCSRResult
-import embed.lda.LDAModel
 import com.tencent.angel.ml.math.vector.DenseIntVector
+import embed.lda.LDAModel
 import embed.sampling.AliasTable
 import org.apache.commons.logging.LogFactory
 
