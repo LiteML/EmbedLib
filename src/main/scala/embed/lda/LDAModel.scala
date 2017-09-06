@@ -11,6 +11,7 @@ import com.tencent.angel.protobuf.generated.MLProtos.RowType
 import com.tencent.angel.worker.storage.DataBlock
 import com.tencent.angel.worker.task.TaskContext
 import org.apache.hadoop.conf.Configuration
+import embed.lda.LDAModel._
 
 
 /**
