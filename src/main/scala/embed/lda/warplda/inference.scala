@@ -380,7 +380,7 @@ class Trainer(ctx:TaskContext, model:LDAModel,
       override def run(): Unit = {
         sampler.docSample(pkey)
         sampler.dk.foreach{
-          case(topic, n) =>
+          case(_ , n) =>
             ll += Gamma.logGamma(alpha + n)
             ll -= Gamma.logGamma(data.docLens(pkey) + alpha * model.K)
         }
