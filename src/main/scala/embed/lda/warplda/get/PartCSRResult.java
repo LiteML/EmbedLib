@@ -14,7 +14,7 @@ import java.util.List;
 
 public class PartCSRResult extends PartitionGetResult {
 
-  private static final Log LOG = LogFactory.getLog(com.tencent.angel.ml.lda.get.PartCSRResult.class);
+  private static final Log LOG = LogFactory.getLog(PartCSRResult.class);
 
   private List<ServerRow> splits;
   private ByteBuf buf;
