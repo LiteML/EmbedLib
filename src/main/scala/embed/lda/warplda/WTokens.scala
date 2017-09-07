@@ -1,16 +1,15 @@
 package embed.lda.warplda
-import java.lang.Long
 
 import scala.collection.mutable.ArrayBuffer
 /**
   * Created by chris on 8/22/17.
   */
 class Document() {
-  var docId:Long = _
+  var docId:Int = _
   var len:Int = _
   var wids:Array[Int] = _
 
-  def this(docId:Long, len:Int, wids:Array[Int]){
+  def this(docId:Int, len:Int, wids:Array[Int]){
     this()
     this.docId = docId
     this.len = len
@@ -20,12 +19,12 @@ class Document() {
   def this(str:String) {
     this()
     val parts = str.split("\t")
-    this.docId = Long.parseLong(parts(0))
+    this.docId = Integer.parseInt(parts(0))
     this.wids = parts(1).split(" ").map(f => Integer.parseInt(f))
     this.len = wids.length
   }
 
-  def this(docId:Long, wids:Array[Int]) {
+  def this(docId:Int, wids:Array[Int]) {
     this()
     this.docId = docId
     this.wids = wids
@@ -39,7 +38,7 @@ class WTokens (val n_words:Int, val n_docs:Int)  {
   var ws:Array[Int] = _
   var topics:Array[Int] = _
   var docLens:Array[Int] = _
-  var docIds:Array[Long] = _
+  var docIds:Array[Int] = _
   var mhProp:Array[Array[Int]] = _
   var n_tokens:Int = _
   var inverseMatrix:Array[Int] = _
@@ -51,7 +50,7 @@ class WTokens (val n_words:Int, val n_docs:Int)  {
     this.ws = Array.ofDim[Int](n_words + 1)
     this.accDoc = Array.ofDim[Int](n_docs + 1)
     this.docLens = Array.ofDim[Int](n_docs)
-    this.docIds = Array.ofDim[Long](n_docs)
+    this.docIds = Array.ofDim[Int](n_docs)
     n_tokens = 0
     docs.indices foreach {d=>
       val doc = docs(d)

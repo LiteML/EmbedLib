@@ -165,7 +165,7 @@ class Sampler(var data: WTokens, var model: LDAModel) {
   }
 
   def docTopicCount(d:Int):Unit = {
-    dk.empty
+    dk = mutable.Map[Int,Int]()
     (data.accDoc(d) until data.accDoc(d + 1)) foreach{i =>
       val k = data.topics(data.inverseMatrix(i))
       dk += k -> (dk.getOrElse(k, 0) + 1)
