@@ -240,7 +240,7 @@ class Trainer(ctx:TaskContext, model:LDAModel,
     ll += data.n_docs * Gamma.logGamma(alpha * model.K)
   }
 
-  /*def scheduleDocllh(n_docs: Int):Double = {
+ /* def scheduleDocllh(n_docs: Int):Double = {
     val results = new LinkedBlockingQueue[Double]()
     class Task(index: AtomicInteger) extends Thread {
       private var ll = 0.0
@@ -248,15 +248,10 @@ class Trainer(ctx:TaskContext, model:LDAModel,
         while (index.get() < n_docs) {
           val d = index.incrementAndGet()
           if (d < n_docs) {
-            var dk = Array.ofDim[Int](model.K)
-            (data.accDoc(d) until data.accDoc(d + 1)) foreach {i=>
-              dk(data.topics(data.inverseMatrix(i))) += 1
-            }
-            (0 until model.K) foreach {j=>
+            () foreach {j=>
               ll += Gamma.logGamma(alpha + dk(j))
               ll -= Gamma.logGamma(data.docLens(d) + alpha * model.K)
             }
-            dk = null
           }
         }
         results.add(ll)
@@ -271,8 +266,8 @@ class Trainer(ctx:TaskContext, model:LDAModel,
     ll -= nnz * Gamma.logGamma(alpha)
     ll += data.n_docs * Gamma.logGamma(alpha * model.K)
     ll
-  }
-*/
+  }*/
+
 
   def fetchNk: Unit = {
     val row = model.tMat.getRow(0)
@@ -384,11 +379,12 @@ class Trainer(ctx:TaskContext, model:LDAModel,
     class Task(sampler: Sampler, pkey: Int) extends Thread {
       override def run(): Unit = {
         sampler.docSample(pkey)
-        (0 until model.K) foreach {j=>
-          ll += Gamma.logGamma(alpha + sampler.dk(j))
-          ll -= Gamma.logGamma(data.docLens(pkey) + alpha * model.K)
+        sampler.dk.foreach{
+          case(topic, n) =>
+            ll += Gamma.logGamma(alpha + n)
+            ll -= Gamma.logGamma(data.docLens(pkey) + alpha * model.K)
         }
-        nnz += data.nnz(pkey)
+        nnz += sampler.dk.size
         queue.add(sampler)
       }
     }

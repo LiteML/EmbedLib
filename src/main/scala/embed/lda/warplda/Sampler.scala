@@ -1,6 +1,5 @@
 package embed.lda.warplda
 
-import java.util
 import java.util.Random
 
 import com.tencent.angel.PartitionKey
@@ -11,6 +10,7 @@ import embed.lda.LDAModel
 import embed.sampling.AliasTable
 import org.apache.commons.logging.LogFactory
 
+import scala.collection.mutable
 import scala.util.control.Breaks._
 /**
   * Created by chris on 8/23/17.
@@ -27,7 +27,7 @@ class Sampler(var data: WTokens, var model: LDAModel) {
   val vbeta:Float = data.n_words * beta
   var nk = new Array[Int](K)
   var wk = new Array[Int](K)
-  var dk = new Array[Int](K)
+  var dk: mutable.Map[Int, Int] = mutable.Map[Int,Int]()
   val mh:Int =  model.mh
   var error = false
 
@@ -141,7 +141,6 @@ class Sampler(var data: WTokens, var model: LDAModel) {
         di += 1
       }
     }
-    data.nnz(d) = dk.count(f=>f != 0).toShort
   }
 
 
@@ -169,9 +168,10 @@ class Sampler(var data: WTokens, var model: LDAModel) {
   }
 
   def docTopicCount(d:Int):Unit = {
-    util.Arrays.fill(dk, 0)
+    dk.empty
     (data.accDoc(d) until data.accDoc(d + 1)) foreach{i =>
-      dk(data.topics(data.inverseMatrix(i))) += 1
+      val k = data.topics(data.inverseMatrix(i))
+      dk += k -> (dk.getOrElse(k, 0) + 1)
     }
   }
 
