@@ -44,7 +44,6 @@ class WTokens (val n_words:Int, val n_docs:Int)  {
   var n_tokens:Int = _
   var inverseMatrix:Array[Int] = _
   var accDoc:Array[Int] = _
-  var mhSteps:Array[Byte] = _
 
 
   def build(docs:ArrayBuffer[Document],K:Int, mh:Int):Unit = {
@@ -64,7 +63,6 @@ class WTokens (val n_words:Int, val n_docs:Int)  {
       }
     }
     this.topics = Array.ofDim[Int](n_tokens)
-    this.mhSteps = Array.ofDim[Byte](n_tokens)
     this.inverseMatrix = Array.ofDim[Int](n_tokens)
     //word count
     ws(0) = 0

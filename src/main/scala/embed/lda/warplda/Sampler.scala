@@ -58,8 +58,7 @@ class Sampler(var data: WTokens, var model: LDAModel) {
           var s: Int = tt
           var t: Int = 0
           var pai: Float = 1f
-          val steps = math.min(data.mhSteps(wi).toInt, mh)
-          (0 until steps) foreach { i =>
+          (0 until mh) foreach { i =>
             breakable{
               t = data.mhProp(i)(wi)
               if(wk(s) < 0 || wk(t) < 0) {
@@ -74,7 +73,6 @@ class Sampler(var data: WTokens, var model: LDAModel) {
           wk(tt) += 1
           nk(tt) += 1
           data.topics(wi) = tt
-          data.mhSteps(wi) = math.ceil(1 / pai).toByte
           update.plusBy(tt, 1)
           wi += 1
         }
@@ -121,9 +119,8 @@ class Sampler(var data: WTokens, var model: LDAModel) {
         var s: Int = tt
         var t: Int = 0
         var pai: Float = 1f
-        val steps = math.min(data.mhSteps(wi).toInt, mh)
 
-        (0 until steps) foreach { i =>
+        (0 until mh) foreach { i =>
           t = data.mhProp(i)(wi)
           pai = math.min(1f, (dk(t) + alpha) * (nk(s) + vbeta) / ((dk(s) + alpha) * (nk(t) + vbeta)))
           if (rand.nextFloat() < pai) tt = t
@@ -241,8 +238,7 @@ class Sampler(var data: WTokens, var model: LDAModel) {
           var s: Int = tt
           var t: Int = 0
           var pai: Float = 1f
-          val steps = math.min(data.mhSteps(wi).toInt, mh)
-          (0 until steps) foreach { i =>
+          (0 until mh) foreach { i =>
             breakable{
               t = data.mhProp(i)(wi)
               if(wk(t) < 0 || wk(s) < 0) {
@@ -258,7 +254,6 @@ class Sampler(var data: WTokens, var model: LDAModel) {
           nk(tt) += 1
 
           data.topics(wi) = tt
-          data.mhSteps(wi) = math.ceil(1 / pai).toByte
           (0 until mh) foreach{i =>
             data.mhProp(i)(wi) = aliasTable.apply()
           }
