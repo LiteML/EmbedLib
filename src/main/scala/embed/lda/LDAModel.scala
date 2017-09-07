@@ -4,14 +4,14 @@ import com.tencent.angel.conf.AngelConf._
 import com.tencent.angel.ml.conf.MLConf
 import com.tencent.angel.ml.conf.MLConf._
 import com.tencent.angel.ml.feature.LabeledData
-import com.tencent.angel.ml.math.vector.{DenseDoubleVector, DenseIntVector}
+import com.tencent.angel.ml.math.vector.DenseIntVector
 import com.tencent.angel.ml.model.{MLModel, PSModel}
 import com.tencent.angel.ml.predict.PredictResult
 import com.tencent.angel.protobuf.generated.MLProtos.RowType
 import com.tencent.angel.worker.storage.DataBlock
 import com.tencent.angel.worker.task.TaskContext
 import org.apache.hadoop.conf.Configuration
-import LDAModel._
+import embed.lda.LDAModel._
 
 
 /**
@@ -48,7 +48,6 @@ object LDAModel {
   val SAVE_DOC_TOPIC = "save.doc.topic"
   val SAVE_WORD_TOPIC = "save.word.topic"
 
-  val mh = 10
 }
 
 class LDAModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel(conf, _ctx) {

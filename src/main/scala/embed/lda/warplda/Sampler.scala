@@ -108,7 +108,7 @@ class Sampler(var data: WTokens, var model: LDAModel) {
       breakable{
         val wi = data.inverseMatrix(di)
         var tt = data.topics(wi)
-        if (dk(tt) <= 0) {
+        if (dk(tt) <= 0 || !dk.contains(tt)) {
           Sampler.LOG.error(s"Error nk[$tt] = ${nk(tt)} for doc $d")
           error = true
           break
@@ -126,7 +126,7 @@ class Sampler(var data: WTokens, var model: LDAModel) {
           if (rand.nextFloat() < pai) tt = t
           s = t
         }
-        dk(tt) += 1
+        dk += tt -> (dk.getOrElse(tt, 0) + 1)
         nk(tt) += 1
         data.topics(wi) = tt
 

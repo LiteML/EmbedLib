@@ -5,7 +5,7 @@
 
   <groupId>embedLib</groupId>
   <artifactId>embedLib</artifactId>
-  <packaging>pom</packaging>
+  <packaging>jar</packaging>
   <version>0.0.1</version>
 
   <name>embedLib Project</name>
@@ -34,11 +34,27 @@
     <MaxPermGen>512m</MaxPermGen>
     <CodeCacheSize>512m</CodeCacheSize>
     <spark.version>2.0.2</spark.version>
+    <angel.version>1.2.0</angel.version>
   </properties>
 
 
   <dependencies>
-
+    <!--angel-->
+    <dependency>
+      <groupId>com.tencent.angel</groupId>
+      <artifactId>spark-on-angel-core</artifactId>
+      <version>${angel.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.tencent.angel</groupId>
+      <artifactId>spark-on-angel-mllib</artifactId>
+      <version>${angel.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.tencent.angel</groupId>
+      <artifactId>angel-ps-mllib</artifactId>
+      <version>${angel.version}</version>
+    </dependency>
     <!--spark-->
     <dependency>
       <groupId>org.apache.spark</groupId>
