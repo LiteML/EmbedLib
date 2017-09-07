@@ -11,7 +11,7 @@ import com.tencent.angel.exception.AngelException
 import com.tencent.angel.ml.MLLearner
 import com.tencent.angel.ml.conf.MLConf.LOG_LIKELIHOOD
 import com.tencent.angel.ml.feature.LabeledData
-import com.tencent.angel.ml.lda.get.{GetPartFunc, LikelihoodFunc}
+import embed.lda.warplda.get.{GetPartFunc, LikelihoodFunc}
 import com.tencent.angel.ml.math.vector.DenseIntVector
 import com.tencent.angel.ml.matrix.psf.aggr.enhance.ScalarAggrResult
 import com.tencent.angel.ml.matrix.psf.get.base.{PartitionGetParam, PartitionGetResult}
