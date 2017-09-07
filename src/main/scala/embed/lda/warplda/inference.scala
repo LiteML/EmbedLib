@@ -3,7 +3,6 @@ package embed.lda.warplda
 import java.io.BufferedOutputStream
 import java.util
 import java.util.Collections
-import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.{Executors, Future, LinkedBlockingQueue}
 
 import com.tencent.angel.PartitionKey

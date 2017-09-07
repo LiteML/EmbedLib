@@ -1,7 +1,6 @@
 package embed.lda.warplda
 
 import java.io.{BufferedReader, InputStreamReader}
-import java.util
 
 import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.exception.AngelException
