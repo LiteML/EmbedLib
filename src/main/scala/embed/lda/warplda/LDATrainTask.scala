@@ -30,9 +30,8 @@ class LDATrainTask(val ctx: TaskContext) extends BaseTask[LongWritable, Text, Te
   @throws[Exception]
   def run(ctx: TaskContext): Unit = {
     // Read documents
-    var reader = ctx.getReader[LongWritable, Text]
-    reader.reset()
-    val docs   = new ArrayBuffer[Document]()
+    val reader = ctx.getReader[LongWritable, Text]
+    var docs   = new ArrayBuffer[Document]()
     var did = 0
     var N = 0
     while (reader.nextKeyValue()) {
@@ -44,18 +43,20 @@ class LDATrainTask(val ctx: TaskContext) extends BaseTask[LongWritable, Text, Te
         N += doc.len
       }
     }
+    reader.close()
 
     // Initializing LDA model
     val model = new LDAModel(ctx.getConf, ctx)
 
     LOG.info(s"V=${model.V} K=${model.K} alpha=${model.alpha} "
       + s"beta=${model.beta} M=${docs.length} tokens=$N "
-      + s"threadNum=${model.threadNum}")
+      + s"threadNum=${model.threadNum} mh=${model.mh}")
 
     // build topic structures
     val data = new WTokens(model.V, docs.length)
     data.build(docs, model.K,model.mh)
     docs.clear()
+    docs = null
 
     // training
     val learner = new Trainer(ctx, model, data)

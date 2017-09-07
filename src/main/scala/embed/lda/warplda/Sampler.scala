@@ -1,16 +1,16 @@
 package embed.lda.warplda
 
-import java.util
 import java.util.Random
 
 import com.tencent.angel.PartitionKey
 import com.tencent.angel.exception.AngelException
 import embed.lda.warplda.get.PartCSRResult
-import embed.lda.LDAModel
 import com.tencent.angel.ml.math.vector.DenseIntVector
+import embed.lda.LDAModel
 import embed.sampling.AliasTable
 import org.apache.commons.logging.LogFactory
 
+import scala.collection.mutable
 import scala.util.control.Breaks._
 /**
   * Created by chris on 8/23/17.
@@ -27,8 +27,8 @@ class Sampler(var data: WTokens, var model: LDAModel) {
   val vbeta:Float = data.n_words * beta
   var nk = new Array[Int](K)
   var wk = new Array[Int](K)
-  var dk = new Array[Int](K)
-  val mh:Int =  LDAModel.mh
+  var dk: mutable.Map[Int, Int] = mutable.Map[Int,Int]()
+  val mh:Int =  model.mh
   var error = false
 
   def wordSample(pkey: PartitionKey, csr: PartCSRResult): Unit = {
@@ -58,8 +58,7 @@ class Sampler(var data: WTokens, var model: LDAModel) {
           var s: Int = tt
           var t: Int = 0
           var pai: Float = 1f
-          val steps = math.min(data.mhSteps(wi).toInt, mh)
-          (0 until steps) foreach { i =>
+          (0 until mh) foreach { i =>
             breakable{
               t = data.mhProp(i)(wi)
               if(wk(s) < 0 || wk(t) < 0) {
@@ -74,7 +73,6 @@ class Sampler(var data: WTokens, var model: LDAModel) {
           wk(tt) += 1
           nk(tt) += 1
           data.topics(wi) = tt
-          data.mhSteps(wi) = math.ceil(1 / pai).toByte
           update.plusBy(tt, 1)
           wi += 1
         }
@@ -121,9 +119,8 @@ class Sampler(var data: WTokens, var model: LDAModel) {
         var s: Int = tt
         var t: Int = 0
         var pai: Float = 1f
-        val steps = math.min(data.mhSteps(wi).toInt, mh)
 
-        (0 until steps) foreach { i =>
+        (0 until mh) foreach { i =>
           t = data.mhProp(i)(wi)
           pai = math.min(1f, (dk(t) + alpha) * (nk(s) + vbeta) / ((dk(s) + alpha) * (nk(t) + vbeta)))
           if (rand.nextFloat() < pai) tt = t
@@ -141,7 +138,6 @@ class Sampler(var data: WTokens, var model: LDAModel) {
         di += 1
       }
     }
-    data.nnz(d) = dk.count(f=>f != 0).toShort
   }
 
 
@@ -169,9 +165,10 @@ class Sampler(var data: WTokens, var model: LDAModel) {
   }
 
   def docTopicCount(d:Int):Unit = {
-    util.Arrays.fill(dk, 0)
+    dk.empty
     (data.accDoc(d) until data.accDoc(d + 1)) foreach{i =>
-      dk(data.topics(data.inverseMatrix(i))) += 1
+      val k = data.topics(data.inverseMatrix(i))
+      dk += k -> (dk.getOrElse(k, 0) + 1)
     }
   }
 
@@ -241,8 +238,7 @@ class Sampler(var data: WTokens, var model: LDAModel) {
           var s: Int = tt
           var t: Int = 0
           var pai: Float = 1f
-          val steps = math.min(data.mhSteps(wi).toInt, mh)
-          (0 until steps) foreach { i =>
+          (0 until mh) foreach { i =>
             breakable{
               t = data.mhProp(i)(wi)
               if(wk(t) < 0 || wk(s) < 0) {
@@ -258,7 +254,6 @@ class Sampler(var data: WTokens, var model: LDAModel) {
           nk(tt) += 1
 
           data.topics(wi) = tt
-          data.mhSteps(wi) = math.ceil(1 / pai).toByte
           (0 until mh) foreach{i =>
             data.mhProp(i)(wi) = aliasTable.apply()
           }
