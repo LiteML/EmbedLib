@@ -10,6 +10,7 @@ import java.util.Random;
 /**
  * Created by chris on 9/8/17.
  */
+
 public class JSampler {
     JWTokens data;
     LDAModel model;
@@ -17,7 +18,7 @@ public class JSampler {
     float alpha, beta, vbeta;
     int[] nk;
     int[] wk;
-    private final static Log LOG = LogFactory.getLog(Sampler.class);
+    private final static Log LOG = LogFactory.getLog(JSampler.class);
 
 
 

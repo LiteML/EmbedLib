@@ -55,6 +55,7 @@ public class JWTokens {
             for (int w = 0; w < doc.len; w++) {
                 int wid = doc.wids[w];
                 inverseMatrix[start] = ws[wid] + (--wcnt[wid]);
+                start += 1;
             }
         }
 

@@ -35,7 +35,7 @@ import scala.collection.mutable
   */
 class Trainer(ctx:TaskContext, model:LDAModel,
               data:WTokens) extends MLLearner(ctx){
-  val LOG:Log = LogFactory.getLog(classOf[JTrainer])
+  val LOG:Log = LogFactory.getLog(classOf[Trainer])
   val pkeys: util.List[PartitionKey]= PSAgentContext.get().getMatrixPartitionRouter.
     getPartitionKeyList(model.wtMat.getMatrixId())
   val dKeys:Int = data.n_docs
