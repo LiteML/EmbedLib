@@ -18,6 +18,7 @@ import com.tencent.angel.worker.storage.DataBlock
 import com.tencent.angel.worker.task.TaskContext
 import embed.lda.LDAModel
 import embed.lda.warplda.get.{GetPartFunc, LikelihoodFunc, PartCSRResult}
+import embed.lda.warplda.jv.{JSampler, JWTokens}
 import org.apache.commons.logging.{Log, LogFactory}
 import org.apache.commons.math.special.Gamma
 

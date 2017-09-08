@@ -314,7 +314,7 @@ class Trainer(ctx:TaskContext, model:LDAModel,
   }
 
 
-  def scheduleWordSample(pkeys: java.util.List[PartitionKey]): Boolean = {
+  def scheduleWordSample(pkeys: util.List[PartitionKey]): Boolean = {
 
     class Task(sampler: Sampler, pkey: PartitionKey, csr: PartCSRResult) extends Thread {
       override def run(): Unit = {

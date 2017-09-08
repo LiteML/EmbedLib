@@ -1,4 +1,4 @@
-package embed.lda.warplda;
+package embed.lda.warplda.jv;
 
 /**
  * Created by chris on 9/8/17.

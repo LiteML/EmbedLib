@@ -1,4 +1,4 @@
-package embed.lda.warplda;
+package embed.lda.warplda.jv;
 
 import java.util.List;
 

@@ -1,4 +1,4 @@
-package embed.lda.warplda;
+package embed.lda.warplda.jv;
 
 import com.tencent.angel.PartitionKey;
 import com.tencent.angel.ml.math.vector.DenseIntVector;
@@ -16,8 +16,8 @@ public class JSampler {
     LDAModel model;
     int K;
     float alpha, beta, vbeta;
-    int[] nk;
-    int[] wk;
+    public int[] nk;
+    public int[] wk;
     private final static Log LOG = LogFactory.getLog(JSampler.class);
 
 

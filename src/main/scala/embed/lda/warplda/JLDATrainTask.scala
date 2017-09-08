@@ -1,16 +1,17 @@
 package embed.lda.warplda
 
 import java.io.{BufferedReader, InputStreamReader}
-
 import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.exception.AngelException
 import com.tencent.angel.ml.math.vector.DenseIntVector
 import com.tencent.angel.worker.task.{BaseTask, TaskContext}
-import embed.lda.LDAModel
 import org.apache.commons.logging.LogFactory
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.io.{LongWritable, Text}
+import jv.{JDocument, JWTokens}
 import java.util
+import embed.lda.LDAModel
+
 import scala.collection.mutable.ArrayBuffer
 
 /**
