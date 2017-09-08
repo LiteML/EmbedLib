@@ -13,7 +13,6 @@ import com.tencent.angel.worker.task.TaskContext
 import org.apache.hadoop.conf.Configuration
 import embed.lda.LDAModel._
 
-
 /**
   * The parameters of LDA model.
   */
