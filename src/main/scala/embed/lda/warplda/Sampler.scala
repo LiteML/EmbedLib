@@ -206,7 +206,7 @@ class Sampler(var data: WTokens, var model: LDAModel) {
         val t: Int = rand.nextInt(K)
         data.topics(wi) = t
           wi += 1
-        (0 until mh) foreach {i=>
+        (0 until mh)  foreach{i=>
           data.mhProp(i)(wi) = rand.nextInt(K)
         }
       }

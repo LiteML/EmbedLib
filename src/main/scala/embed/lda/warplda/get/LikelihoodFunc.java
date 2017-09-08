@@ -20,7 +20,7 @@ import java.util.List;
 
 public class LikelihoodFunc extends GetFunc {
 
-  private static final Log LOG = LogFactory.getLog(com.tencent.angel.ml.lda.get.LikelihoodFunc.class);
+  private static final Log LOG = LogFactory.getLog(LikelihoodFunc.class);
 
   public LikelihoodFunc(int matrixId, float beta) {
     super(new LikelihoodParam(matrixId, beta));

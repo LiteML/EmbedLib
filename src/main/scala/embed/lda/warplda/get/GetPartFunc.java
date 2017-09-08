@@ -14,7 +14,7 @@ import java.util.List;
 
 public class GetPartFunc extends GetFunc {
 
-  private final static Log LOG = LogFactory.getLog(com.tencent.angel.ml.lda.get.GetPartFunc.class);
+  private final static Log LOG = LogFactory.getLog(GetPartFunc.class);
 
   public GetPartFunc(GetParam param) {
     super(param);
