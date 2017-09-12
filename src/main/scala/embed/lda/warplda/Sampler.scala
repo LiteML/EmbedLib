@@ -86,7 +86,7 @@ class Sampler(var data: WTokens, var model: LDAModel) {
       if (!csr.read(wk,true)) {
         throw new AngelException("some error happens")
       }
-      var aliasTable = new AliasTable(wk.zipWithIndex.filter(_._1 > 0))
+      var aliasTable = new AliasTable(wk)
       var wi: Int = data.ws(w)
       while ( wi < data.ws(w + 1) ) {
         (0 until mh) foreach{i =>
@@ -122,9 +122,11 @@ class Sampler(var data: WTokens, var model: LDAModel) {
 
         (0 until mh) foreach { i =>
           t = data.mhProp(i)(wi)
-          pai = math.min(1f, (dk(t) + alpha) * (nk(s) + vbeta) / ((dk(s) + alpha) * (nk(t) + vbeta)))
-          if (rand.nextFloat() < pai) tt = t
-          s = t
+          if(dk.contains(t) && dk.contains(s)) {
+            pai = math.min(1f, (dk(t) + alpha) * (nk(s) + vbeta) / ((dk(s) + alpha) * (nk(t) + vbeta)))
+            if (rand.nextFloat() < pai) tt = t
+            s = t
+          }
         }
         dk += tt -> (dk.getOrElse(tt, 0) + 1)
         nk(tt) += 1
@@ -223,7 +225,7 @@ class Sampler(var data: WTokens, var model: LDAModel) {
       if (!csr.read(wk,true)) {
         throw new AngelException("some error happens")
       }
-      val aliasTable = new AliasTable(wk.zipWithIndex.filter(_._1 > 0))
+      val aliasTable = new AliasTable(wk)
       var wi: Int = data.ws(w)
       while ( wi < data.ws(w + 1) ) {
         breakable {
