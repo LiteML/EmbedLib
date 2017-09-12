@@ -3,6 +3,7 @@ package embed.lda.warplda
 import java.io.BufferedOutputStream
 import java.util
 import java.util.Collections
+import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.{Executors, Future, LinkedBlockingQueue}
 
 import com.tencent.angel.PartitionKey
@@ -49,8 +50,6 @@ class Trainer(ctx:TaskContext, model:LDAModel,
   val lgammaBeta:Double = Gamma.logGamma(beta)
   val lgammaAlpha:Double = Gamma.logGamma(alpha)
   val lgammaAlphaSum:Double = Gamma.logGamma(alpha * model.K)
-  var ll:Double = 0
-  var nnz:Int = 0
 
 
   val nk = new Array[Int](model.K)
@@ -68,7 +67,7 @@ class Trainer(ctx:TaskContext, model:LDAModel,
   def train(train: DataBlock[LabeledData], vali: DataBlock[LabeledData]): MLModel = ???
   def initialize(): Unit = {
     scheduleInit()
-    likelihood
+    val ll = likelihood
     LOG.info(s"ll=$ll")
     globalMetrics.metrics(LOG_LIKELIHOOD, ll)
     ctx.incIteration()
@@ -231,28 +230,38 @@ class Trainer(ctx:TaskContext, model:LDAModel,
     ll
   }
 
-  def likelihood: Unit = {
+  def likelihood: Double = {
+    var ll = 0d
     fetchNk
     if (ctx.getTaskIndex == 0)
       ll += computeWordLLHSummary + computeWordLLH
-    ll -= nnz * Gamma.logGamma(alpha)
-    ll += data.n_docs * Gamma.logGamma(alpha * model.K)
+    ll += scheduleDocllh(data.n_docs)
+    ll
   }
 
- /* def scheduleDocllh(n_docs: Int):Double = {
+  def scheduleDocllh(n_docs: Int):Double = {
     val results = new LinkedBlockingQueue[Double]()
+    val nnzs = new LinkedBlockingQueue[Int]()
     class Task(index: AtomicInteger) extends Thread {
       private var ll = 0.0
+      private var nnz = 0
       override def run(): Unit = {
         while (index.get() < n_docs) {
           val d = index.incrementAndGet()
+          val dk = mutable.Map[Int,Int]()
           if (d < n_docs) {
-            () foreach {j=>
-              ll += Gamma.logGamma(alpha + dk(j))
+            (data.accDoc(d) until data.accDoc(d+1)) foreach {j=>
+              val k = data.topics(data.inverseMatrix(j))
+              dk += k ->(dk.getOrElse(k, 0) + 1)
+            }
+            dk.foreach{case(k, value) =>
+              ll += Gamma.logGamma(alpha + dk(value))
               ll -= Gamma.logGamma(data.docLens(d) + alpha * model.K)
             }
+            nnz += dk.size
           }
         }
+        nnzs.add(nnz)
         results.add(ll)
       }
     }
@@ -261,11 +270,11 @@ class Trainer(ctx:TaskContext, model:LDAModel,
     var ll = 0.0; var nnz = 0
     for (i <- 0 until model.threadNum) executor.execute(new Task(index))
     for (i <- 0 until model.threadNum) ll += results.take()
-    for (d <- 0 until n_docs) nnz += data.nnz(d)
+    for (d <- 0 until model.threadNum) nnz += nnzs.take()
     ll -= nnz * Gamma.logGamma(alpha)
     ll += data.n_docs * Gamma.logGamma(alpha * model.K)
     ll
-  }*/
+  }
 
 
   def fetchNk: Unit = {
@@ -378,12 +387,6 @@ class Trainer(ctx:TaskContext, model:LDAModel,
     class Task(sampler: Sampler, pkey: Int) extends Thread {
       override def run(): Unit = {
         sampler.docSample(pkey)
-        sampler.dk.foreach{
-          case(_ , n) =>
-            ll += Gamma.logGamma(alpha + n)
-            ll -= Gamma.logGamma(data.docLens(pkey) + alpha * model.K)
-        }
-        nnz += sampler.dk.size
         queue.add(sampler)
       }
     }
@@ -418,20 +421,16 @@ class Trainer(ctx:TaskContext, model:LDAModel,
     for (epoch <- 1 to n_iters) {
       // One epoch
       fetchNk
-      this.ll = 0d
-      this.nnz = 0
       var error = scheduleWordSample(pkeys)
       error = scheduleDocSample(dKeys)
 
       // calculate likelihood
-      likelihood
+      val ll = likelihood
       LOG.info(s"epoch=$epoch local likelihood=$ll")
 
       // submit to client
       globalMetrics.metrics(LOG_LIKELIHOOD, ll)
       ctx.incIteration()
-
-      //      if (epoch % 10 == 0) reset(epoch)
     }
   }
 
