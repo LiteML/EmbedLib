@@ -290,6 +290,7 @@ class Trainer(ctx:TaskContext, model:LDAModel,
 
   val queue = new LinkedBlockingQueue[Sampler]()
   val executor = Executors.newFixedThreadPool(model.threadNum)
+
   def scheduleInit(): Unit = {
     class Task(sampler: Sampler, pkey: PartitionKey) extends Thread {
       override def run(): Unit = {
