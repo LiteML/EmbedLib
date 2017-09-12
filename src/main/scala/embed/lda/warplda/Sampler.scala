@@ -23,7 +23,7 @@ class Sampler(var data: WTokens, var model: LDAModel) {
   val K:Int = model.K
   val alpha:Float = model.alpha
   val beta:Float = model.beta
-  val dalpha:Float = data.n_docs * alpha
+  val dalpha:Float = model.K * alpha
   val vbeta:Float = data.n_words * beta
   var nk = new Array[Int](K)
   var wk = new Array[Int](K)
