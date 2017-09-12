@@ -54,7 +54,6 @@ class LDATrainTask(val ctx: TaskContext) extends BaseTask[LongWritable, Text, Te
     val data = new WTokens(model.V, docs.length)
     data.build(docs, model.K,model.mh)
     docs.clear()
-    docs = null
 
     // training
     val learner = new Trainer(ctx, model, data)
