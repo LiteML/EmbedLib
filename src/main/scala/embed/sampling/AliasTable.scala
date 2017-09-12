@@ -7,7 +7,8 @@ import scala.collection.mutable.ArrayBuffer
   * Created by chris on 8/2/17.
   * @param wordTopicCount Array[(count, topic)]
   */
-class AliasTable(val wordTopicCount:Array[(Int,Int)]) extends IntSampling{
+class AliasTable(val count:Array[Int]) extends IntSampling{
+  private final val wordTopicCount = count.zipWithIndex.filter(_._1 > 0)
   private final val length:Int = wordTopicCount.length
   private final val alias = Array.ofDim[Int](length)
   private final val sum:Float = wordTopicCount.map(_._1).sum.toFloat
@@ -34,6 +35,7 @@ class AliasTable(val wordTopicCount:Array[(Int,Int)]) extends IntSampling{
   }
 }
 
+/*
 object AliasTable {
   def main(args: Array[String]): Unit = {
     val wordTopicCount = Array((100,1),(200,1),(1000,3),(400,4))
@@ -49,3 +51,4 @@ object AliasTable {
     println(z.count(f=>f==7))
   }
 }
+*/
