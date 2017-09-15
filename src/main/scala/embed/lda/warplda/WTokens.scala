@@ -1,6 +1,7 @@
 package embed.lda.warplda
 
 import scala.collection.mutable.ArrayBuffer
+
 /**
   * Created by chris on 8/22/17.
   */

@@ -1,7 +1,6 @@
 package embed.lda.warplda
 
 import com.tencent.angel.worker.task.{BaseTask, TaskContext}
-import embed.lda.LDAModel
 import org.apache.commons.logging.LogFactory
 import org.apache.hadoop.io.{LongWritable, Text}
 

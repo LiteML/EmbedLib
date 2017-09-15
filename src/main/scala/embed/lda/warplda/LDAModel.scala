@@ -1,4 +1,4 @@
-package embed.lda
+package embed.lda.warplda
 
 import com.tencent.angel.conf.AngelConf._
 import com.tencent.angel.ml.conf.MLConf
@@ -11,7 +11,7 @@ import com.tencent.angel.protobuf.generated.MLProtos.RowType
 import com.tencent.angel.worker.storage.DataBlock
 import com.tencent.angel.worker.task.TaskContext
 import org.apache.hadoop.conf.Configuration
-import embed.lda.LDAModel._
+import embed.lda.warplda.LDAModel._
 
 /**
   * The parameters of LDA model.

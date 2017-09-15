@@ -4,7 +4,6 @@ import com.tencent.angel.client.AngelClientFactory
 import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.data.inputformat.BalanceInputFormat
 import com.tencent.angel.ml.MLRunner
-import embed.lda.LDAModel
 import org.apache.commons.logging.LogFactory
 import org.apache.hadoop.conf.Configuration
 

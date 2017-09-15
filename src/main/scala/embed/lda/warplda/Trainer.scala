@@ -12,7 +12,7 @@ import com.tencent.angel.exception.AngelException
 import com.tencent.angel.ml.MLLearner
 import com.tencent.angel.ml.conf.MLConf.LOG_LIKELIHOOD
 import com.tencent.angel.ml.feature.LabeledData
-import embed.lda.warplda.get.{GetPartFunc, LikelihoodFunc}
+import com.tencent.angel.ml.lda.get.{GetPartFunc, LikelihoodFunc, PartCSRResult}
 import com.tencent.angel.ml.math.vector.DenseIntVector
 import com.tencent.angel.ml.matrix.psf.aggr.enhance.ScalarAggrResult
 import com.tencent.angel.ml.matrix.psf.get.base.{PartitionGetParam, PartitionGetResult}
@@ -23,8 +23,6 @@ import com.tencent.angel.psagent.matrix.transport.adapter.RowIndex
 import com.tencent.angel.utils.HdfsUtil
 import com.tencent.angel.worker.storage.DataBlock
 import com.tencent.angel.worker.task.TaskContext
-import embed.lda.LDAModel
-import embed.lda.warplda.get.PartCSRResult
 import org.apache.commons.logging.{Log, LogFactory}
 import org.apache.commons.math.special.Gamma
 import org.apache.hadoop.fs.Path
@@ -47,9 +45,6 @@ class Trainer(ctx:TaskContext, model:LDAModel,
   // Hyper parameters
   val alpha:Float = model.alpha
   val beta:Float  = model.beta
-  val lgammaBeta:Double = Gamma.logGamma(beta)
-  val lgammaAlpha:Double = Gamma.logGamma(alpha)
-  val lgammaAlphaSum:Double = Gamma.logGamma(alpha * model.K)
 
 
   val nk = new Array[Int](model.K)
@@ -254,8 +249,8 @@ class Trainer(ctx:TaskContext, model:LDAModel,
               val k = data.topics(data.inverseMatrix(j))
               dk += k ->(dk.getOrElse(k, 0) + 1)
             }
-            dk.foreach{case(k, value) =>
-              ll += Gamma.logGamma(alpha + dk(value))
+            dk.foreach{case(_, value) =>
+              ll += Gamma.logGamma(alpha + value)
               ll -= Gamma.logGamma(data.docLens(d) + alpha * model.K)
             }
             nnz += dk.size
@@ -383,6 +378,55 @@ class Trainer(ctx:TaskContext, model:LDAModel,
     error
   }
 
+  def scheduleAliasSample(pkeys: util.List[PartitionKey]): Boolean = {
+    class Task(sampler: Sampler, pkey: PartitionKey, csr: PartCSRResult) extends Thread {
+      override def run(): Unit = {
+        sampler.aliasSample(pkey, csr)
+        queue.add(sampler)
+      }
+    }
+
+    val client = PSAgentContext.get().getMatrixTransportClient
+    val iter = pkeys.iterator()
+    val func = new GetPartFunc(null)
+    val futures = new mutable.HashMap[PartitionKey, Future[PartitionGetResult]]()
+    while (iter.hasNext) {
+      val pkey = iter.next()
+      val param = new PartitionGetParam(model.wtMat.getMatrixId, pkey)
+      val future = client.get(func, param)
+      futures.put(pkey, future)
+    }
+
+    // copy nk to each sampler
+    for (i <- 0 until model.threadNum) queue.add(new Sampler(data, model).set(nk))
+
+    while (futures.nonEmpty) {
+      val keys = futures.keySet.iterator
+      while (keys.hasNext) {
+        val pkey = keys.next()
+        val future = futures(pkey)
+        if (future.isDone) {
+          val sampler = queue.take()
+          future.get() match {
+            case csr: PartCSRResult => executor.execute(new Task(sampler, pkey, csr))
+            case _ => throw new AngelException("should by PartCSRResult")
+          }
+          futures.remove(pkey)
+        }
+      }
+    }
+
+    var error = false
+    // calculate the delta value of nk
+    // the take means that all tasks have been finished
+    for (i <- 0 until model.threadNum) {
+      val sampler = queue.take()
+      error = sampler.error
+    }
+    error
+  }
+
+
 
   def scheduleDocSample(dKeys:Int): Boolean = {
     class Task(sampler: Sampler, pkey: Int) extends Thread {
@@ -423,6 +467,7 @@ class Trainer(ctx:TaskContext, model:LDAModel,
       // One epoch
       fetchNk
       var error = scheduleWordSample(pkeys)
+      error = scheduleAliasSample(pkeys)
       error = scheduleDocSample(dKeys)
 
       // calculate likelihood
@@ -484,15 +529,14 @@ class Trainer(ctx:TaskContext, model:LDAModel,
 
     for (d <- 0 until data.n_docs) {
       val sb = new StringBuilder
-      val dk = Array.ofDim[Int](model.K)
+      val dk = mutable.Map[Int, Int]()
       (data.accDoc(d) until data.accDoc(d + 1)) foreach{ i=>
-        dk(data.topics(data.inverseMatrix(i)))  += 1
+        val k = data.topics(data.inverseMatrix(i))
+        dk += k -> (dk.getOrElse(k, 0) + 1)
       }
       sb.append(data.docIds(d))
-      val sparseDk = dk.zipWithIndex.filter(_._1 != 0)
-      val len = sparseDk.length
-      sparseDk.foreach{s =>
-        sb.append(s" ${s._2}:${s._1}")
+      dk.foreach{case(k ,v) =>
+        sb.append(s" $k:$v")
       }
       sb.append("\n")
       out.write(sb.toString().getBytes("UTF-8"))
