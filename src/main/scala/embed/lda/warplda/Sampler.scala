@@ -45,8 +45,9 @@ class Sampler(var data: WTokens, var model: LDAModel) {
         breakable {
           var tt: Int = data.topics(wi)
           if (wk(tt) <= 0) {
-            Sampler.LOG.error(s"Error wk[$tt] = ${wk(tt)} for word $w")
+//            Sampler.LOG.error(s"Error wk[$tt] = ${wk(tt)} for word $w")
             error = true
+            wi += 1
             break
           }
           wk(tt) -= 1
@@ -58,11 +59,8 @@ class Sampler(var data: WTokens, var model: LDAModel) {
           var t: Int = 0
           var pai: Float = 1f
           (0 until mh) foreach { i =>
-            breakable {
-              t = data.mhProp(i)(wi)
-              if (wk(s) < 0 || wk(t) < 0) {
-                break
-              }
+            t = data.mhProp(i)(wi)
+            if (!(wk(s) < 0 || wk(t) < 0)) {
               pai = math.min(1f, (wk(t) + beta) * (nk(s) + vbeta) / ((wk(s) + beta) * (nk(t) + vbeta)))
               if (rand.nextFloat() < pai) tt = t
               s = t
@@ -91,7 +89,7 @@ class Sampler(var data: WTokens, var model: LDAModel) {
       if (!csr.read(wk)) {
         throw new AngelException("some error happens")
       }
-      var aliasTable = new AliasTable(wk)
+      val aliasTable = new AliasTable(wk)
       var wi: Int = data.ws(w)
       while ( wi < data.ws(w + 1) ) {
         (0 until mh) foreach{i =>
@@ -116,8 +114,9 @@ class Sampler(var data: WTokens, var model: LDAModel) {
         val wi = data.inverseMatrix(di)
         var tt = data.topics(wi)
         if (dk(tt) <= 0 || !dk.contains(tt)) {
-          Sampler.LOG.error(s"Error nk[$tt] = ${nk(tt)} for doc $d")
+//          Sampler.LOG.error(s"Error nk[$tt] = ${nk(tt)} for doc $d")
           error = true
+          di += 1
           break
         }
         dk(tt) -= 1
@@ -238,7 +237,7 @@ class Sampler(var data: WTokens, var model: LDAModel) {
         breakable {
           var tt: Int = data.topics(wi)
           if (wk(tt) <= 0) {
-            Sampler.LOG.error(s"Error wk[$tt] = ${wk(tt)} for word $w")
+//            Sampler.LOG.error(s"Error wk[$tt] = ${wk(tt)} for word $w")
             error = true
             break
           }
