@@ -243,16 +243,16 @@ class Trainer(ctx:TaskContext, model:LDAModel,
       override def run(): Unit = {
         while (index.get() < n_docs) {
           val d = index.incrementAndGet()
-          val dk = mutable.Map[Int,Int]()
           if (d < n_docs) {
+            val dk = mutable.Map[Int,Int]()
             (data.accDoc(d) until data.accDoc(d+1)) foreach {j=>
               val k = data.topics(data.inverseMatrix(j))
               dk += k ->(dk.getOrElse(k, 0) + 1)
             }
             dk.foreach{case(_, value) =>
               ll += Gamma.logGamma(alpha + value)
-              ll -= Gamma.logGamma(data.docLens(d) + alpha * model.K)
             }
+            ll -= Gamma.logGamma(data.docLens(d) + alpha * model.K)
             nnz += dk.size
           }
         }
@@ -266,6 +266,7 @@ class Trainer(ctx:TaskContext, model:LDAModel,
     for (i <- 0 until model.threadNum) executor.execute(new Task(index))
     for (i <- 0 until model.threadNum) ll += results.take()
     for (d <- 0 until model.threadNum) nnz += nnzs.take()
+
     ll -= nnz * Gamma.logGamma(alpha)
     ll += data.n_docs * Gamma.logGamma(alpha * model.K)
     ll
