@@ -75,7 +75,7 @@ class LDAModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel(co
 
   val wtMat = PSModel[DenseIntVector](WORD_TOPIC_MAT, V, K, Math.max(1, V / psNum), K)
     .setRowType(RowType.T_INT_DENSE)
-    .setOplogType("LIL_INT")
+    .setOplogType("SPARSE_INT")
 
   val tMat = PSModel[DenseIntVector](TOPIC_MAT, 1, K, 1, K)
     .setRowType(RowType.T_INT_DENSE)
