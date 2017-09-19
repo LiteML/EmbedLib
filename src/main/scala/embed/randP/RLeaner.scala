@@ -1,7 +1,9 @@
 package embed.randP
+import java.io.BufferedOutputStream
 import java.util.concurrent.{Executors, Future, LinkedBlockingQueue}
 
 import com.tencent.angel.PartitionKey
+import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.exception.AngelException
 import com.tencent.angel.ml.MLLearner
 import com.tencent.angel.ml.feature.LabeledData
@@ -9,16 +11,21 @@ import embed.randP.psf.{GetPartFunc, PartCSRResult}
 import com.tencent.angel.ml.matrix.psf.get.base.{PartitionGetParam, PartitionGetResult}
 import com.tencent.angel.ml.model.MLModel
 import com.tencent.angel.psagent.PSAgentContext
+import com.tencent.angel.utils.HdfsUtil
 import com.tencent.angel.worker.storage.DataBlock
 import com.tencent.angel.worker.task.TaskContext
+import org.apache.commons.logging.{Log, LogFactory}
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
+import org.apache.hadoop.fs.Path
 
 /**
   * Created by chris on 9/19/17.
   */
 class RLeaner(ctx:TaskContext, model:RModel, data:Matrix) extends MLLearner(ctx){
+  val LOG:Log = LogFactory.getLog(classOf[RLeaner])
+
   val pkeys = PSAgentContext.get().getMatrixPartitionRouter.
     getPartitionKeyList(model.wtMat.getMatrixId())
 
@@ -28,15 +35,15 @@ class RLeaner(ctx:TaskContext, model:RModel, data:Matrix) extends MLLearner(ctx)
   val queue = new LinkedBlockingQueue[Operations]()
   val executor = Executors.newFixedThreadPool(model.threadNum)
 
-  val batchSize = 1000000
+  val batchSize = model.batchSize
   val bkeys = (0 until data.numOfRows by batchSize) map {i =>
     (i, Math.min(data.numOfRows, i + batchSize))
   }
 
   def scheduleInit(): Unit = {
-    class Task(operations: Operations, pkey: PartitionKey) extends Thread {
+    class Task(operation: Operations, pkey: PartitionKey) extends Thread {
       override def run(): Unit = {
-        operations.initialize(pkey)
+        operation.initialize(pkey)
       }
     }
 
@@ -44,8 +51,8 @@ class RLeaner(ctx:TaskContext, model:RModel, data:Matrix) extends MLLearner(ctx)
 
     val iter = pkeys.iterator()
     while (iter.hasNext) {
-      val sampler = queue.take()
-      executor.execute(new Task(sampler, iter.next()))
+      val operation = queue.take()
+      executor.execute(new Task(operation, iter.next()))
     }
     // update for wt
     model.wtMat.clock().get()
@@ -53,20 +60,22 @@ class RLeaner(ctx:TaskContext, model:RModel, data:Matrix) extends MLLearner(ctx)
   }
 
   def scheduleMultiply():Unit = {
-    class Task(operations: Operations,pkey:PartitionKey,csr:PartCSRResult,dkey:(Int,Int),partResult:Array[ArrayBuffer[(Int,Float)]]) extends Thread {
+    class Task(operation: Operations,pkey:PartitionKey,csr:PartCSRResult,dkey:(Int,Int),partResult:Array[ArrayBuffer[(Int,Float)]]) extends Thread {
       override def run():Unit = {
-        operations.multiply(dkey,csr,pkey,partResult)
-        queue.add(operations)
+        operation.multiply(dkey,csr,pkey,partResult)
+        queue.add(operation)
         }
       }
     val client = PSAgentContext.get().getMatrixTransportClient
     val func = new GetPartFunc(null)
     for (i <- 0 until model.threadNum) queue.add(new Operations(data, model))
-    for(bkey <- bkeys) {
+    bkeys.indices foreach { i =>
+      val bkey = bkeys(i)
       val (bs, be) = bkey
       val iter = pkeys.iterator()
+      val len = bs - be
       val futures = new mutable.HashMap[PartitionKey, Future[PartitionGetResult]]()
-      val partResult = Array.fill(10)(ArrayBuffer[(Int, Float)]())
+      val partResult = Array.fill(len)(ArrayBuffer[(Int, Float)]())
       while (iter.hasNext) {
         val pkey = iter.next()
         val param = new PartitionGetParam(model.wtMat.getMatrixId, pkey)
@@ -89,10 +98,32 @@ class RLeaner(ctx:TaskContext, model:RModel, data:Matrix) extends MLLearner(ctx)
           }
         }
       }
-
-
+      if(model.saveMat) savePartResult(partResult,i,bkey)
     }
+  }
 
-
+  def savePartResult(result:Array[ArrayBuffer[(Int, Float)]], batch:Int,block: (Int, Int)): Unit = {
+    LOG.info(s"save $batch")
+    val dir = conf.get(AngelConf.ANGEL_SAVE_MODEL_PATH)
+    val base = dir + "/" + s"batch_$batch"
+    val part = ctx.getTaskIndex
+    val dest = new Path(base,part.toString)
+    val fs = dest.getFileSystem(conf)
+    val tmp = HdfsUtil.toTmpPath(dest)
+    val out = new BufferedOutputStream(fs.create(tmp, 1.toShort))
+    val (bs, be) = block
+    (bs until be) foreach { b =>
+      val sb = new mutable.StringBuilder()
+      sb.append(data.rowIds(b))
+      val row = result(b)
+      row.foreach{case(k, v) =>
+          sb.append(s" $k:$v")
+      }
+      sb.append("\n")
+      out.write(sb.toString().getBytes("UTF-8"))
+    }
+    out.flush()
+    out.close()
+    fs.rename(tmp, dest)
   }
 }

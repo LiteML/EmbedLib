@@ -25,7 +25,8 @@ class Operations(data:Matrix,model: RModel) {
     (rs until re) foreach { r =>
       val update = new SparseFloatVector(model.F)
       (0 until model.F) foreach { i =>
-        update.set(i, rand.apply())
+        val v = rand.apply()
+        if(v != 0f) update.set(i, v)
       }
       model.wtMat.increment(r, update)
     }
@@ -34,7 +35,7 @@ class Operations(data:Matrix,model: RModel) {
   def multiply(bkeys: (Int, Int), csr:PartCSRResult, pkey:PartitionKey, partialResult:Array[ArrayBuffer[(Int, Float)]]) = {
     val (bs,be) = bkeys
     val ps = pkey.getStartRow
-    val pe = pkey.getStartRow
+    val pe = pkey.getEndRow
     (ps until pe) foreach{ pr =>
       csr.read(wk)
       (bs until be) foreach{br =>
@@ -44,7 +45,7 @@ class Operations(data:Matrix,model: RModel) {
           val value = data.values(i)
           prSum += wk(id) * value
         }
-        partialResult(br).append((pr, prSum))
+        partialResult(br - bs).append((pr, prSum))
       }
     }
   }

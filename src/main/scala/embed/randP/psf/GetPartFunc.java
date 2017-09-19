@@ -18,9 +18,7 @@
 package embed.randP.psf;
 
 import com.tencent.angel.PartitionKey;
-import com.tencent.angel.ml.lda.psf.PartCSRResult;
 import com.tencent.angel.ml.matrix.psf.get.base.*;
-import com.tencent.angel.ml.matrix.psf.get.multi.PartitionGetRowsParam;
 import com.tencent.angel.ps.impl.MatrixPartitionManager;
 import com.tencent.angel.ps.impl.PSContext;
 import com.tencent.angel.ps.impl.matrix.ServerRow;
@@ -43,9 +41,8 @@ public class GetPartFunc extends GetFunc {
 
   @Override
   public PartitionGetResult partitionGet(PartitionGetParam partParam) {
-    PartitionGetParam param = (PartitionGetParam) partParam;
 
-    PartitionKey pkey = param.getPartKey();
+    PartitionKey pkey = partParam.getPartKey();
     pkey = PSContext.get().getMatrixPartitionManager()
             .getPartition(pkey.getMatrixId(), pkey.getPartitionId())
             .getPartitionKey();
