@@ -23,8 +23,8 @@ import org.apache.hadoop.fs.Path
 /**
   * Created by chris on 9/19/17.
   */
-class RLeaner(ctx:TaskContext, model:RModel, data:Matrix) extends MLLearner(ctx){
-  val LOG:Log = LogFactory.getLog(classOf[RLeaner])
+class RLearner(ctx:TaskContext, model:RModel, data:Matrix) extends MLLearner(ctx){
+  val LOG:Log = LogFactory.getLog(classOf[RLearner])
 
   val pkeys = PSAgentContext.get().getMatrixPartitionRouter.
     getPartitionKeyList(model.wtMat.getMatrixId())

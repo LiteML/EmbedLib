@@ -45,7 +45,7 @@ class RTrainTask(val ctx:TaskContext) extends BaseTask[LongWritable,Text,Text](c
     data.build(rows)
     rows.clear()
 
-    val learner = new RLeaner(ctx,model,data)
+    val learner = new RLearner(ctx,model,data)
     learner.scheduleInit()
     learner.scheduleMultiply()
   }
