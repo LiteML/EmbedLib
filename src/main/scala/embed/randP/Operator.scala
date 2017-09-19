@@ -11,11 +11,11 @@ import scala.collection.mutable.ArrayBuffer
 /**
   * Created by chris on 9/19/17.
   */
-object Operations {
-  private val LOG = LogFactory.getLog(classOf[Operations])
+object Operator {
+  private val LOG = LogFactory.getLog(classOf[Operator])
 }
 
-class Operations(data:Matrix,model: RModel) {
+class Operator(data:Matrix,model: RModel) {
   val wk = new Array[Float](model.F)
 
   def initialize(pkey: PartitionKey): Unit = {

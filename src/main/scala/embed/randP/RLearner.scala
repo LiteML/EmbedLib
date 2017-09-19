@@ -32,7 +32,7 @@ class RLearner(ctx:TaskContext, model:RModel, data:Matrix) extends MLLearner(ctx
   override
   def train(train: DataBlock[LabeledData], vali: DataBlock[LabeledData]): MLModel = ???
 
-  val queue = new LinkedBlockingQueue[Operations]()
+  val queue = new LinkedBlockingQueue[Operator]()
   val executor = Executors.newFixedThreadPool(model.threadNum)
 
   val batchSize = model.batchSize
@@ -41,34 +41,38 @@ class RLearner(ctx:TaskContext, model:RModel, data:Matrix) extends MLLearner(ctx
   }
 
   def scheduleInit(): Unit = {
-    class Task(operation: Operations, pkey: PartitionKey) extends Thread {
+    class Task(operator: Operator, pkey: PartitionKey) extends Thread {
       override def run(): Unit = {
-        operation.initialize(pkey)
+        operator.initialize(pkey)
+        queue.add(operator)
       }
     }
 
-    for (i <- 0 until model.threadNum) queue.add(new Operations(data, model))
+    for (i <- 0 until model.threadNum) queue.add(new Operator(data, model))
 
     val iter = pkeys.iterator()
     while (iter.hasNext) {
-      val operation = queue.take()
-      executor.execute(new Task(operation, iter.next()))
+      val operator = queue.take()
+      executor.execute(new Task(operator, iter.next()))
     }
+
+    for (i <- 0 until model.threadNum) queue.take()
+
     // update for wt
     model.wtMat.clock().get()
     // update for nk
   }
 
   def scheduleMultiply():Unit = {
-    class Task(operation: Operations,pkey:PartitionKey,csr:PartCSRResult,dkey:(Int,Int),partResult:Array[ArrayBuffer[(Int,Float)]]) extends Thread {
+    class Task(operator: Operator,pkey:PartitionKey,csr:PartCSRResult,dkey:(Int,Int),partResult:Array[ArrayBuffer[(Int,Float)]]) extends Thread {
       override def run():Unit = {
-        operation.multiply(dkey,csr,pkey,partResult)
-        queue.add(operation)
+        operator.multiply(dkey,csr,pkey,partResult)
+        queue.add(operator)
         }
       }
     val client = PSAgentContext.get().getMatrixTransportClient
     val func = new GetPartFunc(null)
-    for (i <- 0 until model.threadNum) queue.add(new Operations(data, model))
+    for (i <- 0 until model.threadNum) queue.add(new Operator(data, model))
     bkeys.indices foreach { i =>
       val bkey = bkeys(i)
       val (bs, be) = bkey
@@ -89,9 +93,9 @@ class RLearner(ctx:TaskContext, model:RModel, data:Matrix) extends MLLearner(ctx
           val pkey = keys.next()
           val future = futures(pkey)
           if (future.isDone) {
-            val operation = queue.take()
+            val operator = queue.take()
             future.get() match {
-              case csr: PartCSRResult => executor.execute(new Task(operation, pkey, csr, bkey,partResult))
+              case csr: PartCSRResult => executor.execute(new Task(operator, pkey, csr, bkey,partResult))
               case _ => throw new AngelException("should by PartCSRResult")
             }
             futures.remove(pkey)
