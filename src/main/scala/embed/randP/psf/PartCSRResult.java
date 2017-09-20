@@ -11,6 +11,7 @@ import org.apache.commons.logging.LogFactory;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 
 /**
@@ -48,19 +49,14 @@ public class PartCSRResult extends PartitionGetResult{
 
         try {
             row.getLock().readLock().lock();
-            Int2FloatOpenHashMap Map = row.getData();
-            int len = (int)(row.getEndCol() - row.getStartCol());
-            int cnt = 0;
-            for (int i = 0; i < len; i++)
-                if (Map.get(i) != 0)
-                    cnt++;
-            // sparse
+            Int2FloatOpenHashMap map = row.getData();
+
+            int cnt = map.size();
             buf.writeShort(cnt);
-            for (int i = 0; i < len; i++) {
-                if (Map.get(i) != 0) {
-                    buf.writeShort(i);
-                    buf.writeFloat(Map.get(i));
-                }
+            for (Map.Entry<Integer, Float> entry : map.entrySet()) {
+                buf.writeShort(entry.getKey());
+
+                buf.writeFloat(entry.getValue());
             }
         } finally {
             row.getLock().readLock().unlock();
@@ -79,7 +75,7 @@ public class PartCSRResult extends PartitionGetResult{
 
     @Override
     public int bufferLen() {
-        return 16;
+        return 32;
     }
 
     public boolean read(float[] row) {
@@ -91,10 +87,9 @@ public class PartCSRResult extends PartitionGetResult{
 
         Arrays.fill(row, 0f);
         int len = buf.readShort();
-
         for (int i = 0; i < len; i ++) {
             int key = buf.readShort();
-            Float val = buf.readFloat();
+            float val = buf.readFloat();
             row[key] = val;
         }
 

@@ -31,9 +31,10 @@ class Matrix(val numOfRows:Int) {
   var lengths:Int =_
   var rowIds:Array[Int] = _
   def build(rows :ArrayBuffer[Row]): Unit = {
-    var rowLens:Array[Short] = _
+    var rowLens = Array.ofDim[Short](numOfRows)
+    rowIds = Array.ofDim[Int](numOfRows)
     accRows = Array.ofDim[Int](numOfRows + 1)
-    rows.indices foreach{i =>
+    rows.indices.foreach{i =>
       val row = rows(i)
       lengths += row.len
       rowLens(i) = row.len.toShort

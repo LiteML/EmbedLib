@@ -1,7 +1,7 @@
 package embed.randP
 import com.tencent.angel.conf.AngelConf.ANGEL_PS_NUMBER
 import com.tencent.angel.ml.conf.MLConf.{DEFAULT_ML_PART_PER_SERVER, DEFAULT_ML_WORKER_THREAD_NUM, ML_PART_PER_SERVER, ML_WORKER_THREAD_NUM}
-import com.tencent.angel.ml.math.vector.DenseIntVector
+import com.tencent.angel.ml.math.vector.{DenseIntVector, SparseFloatVector}
 import com.tencent.angel.ml.model.{MLModel, PSModel}
 import com.tencent.angel.protobuf.generated.MLProtos.RowType
 import org.apache.hadoop.conf.Configuration
@@ -34,21 +34,21 @@ object RModel {
 
 }
 class RModel (conf: Configuration, _ctx: TaskContext = null) extends MLModel(conf, _ctx) {
-  val F = conf.getInt(FEATURE_NUM, 1)
-  val R = conf.getInt(COMPONENTS_NUM, 1)
-  val S = conf.getInt(PARAM_S, 3)
+  val F:Int = conf.getInt(FEATURE_NUM, 1)
+  val R:Int = conf.getInt(COMPONENTS_NUM, 1)
+  val S:Double = conf.getDouble(PARAM_S, 3d)
 
   // Initializing model matrices
-  val threadNum = conf.getInt(ML_WORKER_THREAD_NUM, DEFAULT_ML_WORKER_THREAD_NUM)
-  val psNum = conf.getInt(ANGEL_PS_NUMBER, 1)
-  val parts = conf.getInt(ML_PART_PER_SERVER, DEFAULT_ML_PART_PER_SERVER)
-  val saveMat = conf.getBoolean(SAVE_MAT, true)
-  val batchSize = conf.getInt(BATCH_SIZE,1000000)
+  val threadNum:Int = conf.getInt(ML_WORKER_THREAD_NUM, DEFAULT_ML_WORKER_THREAD_NUM)
+  val psNum:Int = conf.getInt(ANGEL_PS_NUMBER, 1)
+  val parts:Int = conf.getInt(ML_PART_PER_SERVER, DEFAULT_ML_PART_PER_SERVER)
+  val saveMat:Boolean = conf.getBoolean(SAVE_MAT, true)
+  val batchSize:Int = conf.getInt(BATCH_SIZE,1000000)
 
 
-  val wtMat = PSModel[DenseIntVector](RAND_MAT, R, F, Math.max(1, R / psNum), F)
+  val wtMat = PSModel[SparseFloatVector](RAND_MAT, R, F, Math.max(1, R / psNum), F)
     .setRowType(RowType.T_FLOAT_SPARSE)
-    .setOplogType("SPARSE_INT")
+    .setOplogType("DENSE_FLOAT")
   addPSModel(wtMat)
 
   override

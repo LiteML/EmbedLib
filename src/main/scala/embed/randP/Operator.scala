@@ -24,15 +24,18 @@ class Operator(data:Matrix,model: RModel) {
     val rand: Sampling = new Sampling(model.R, model.S)
     (rs until re) foreach { r =>
       val update = new SparseFloatVector(model.F)
-      (0 until model.F) foreach { i =>
+      (0 until model.F) foreach { k =>
         val v = rand.apply()
-        if(v != 0f) update.set(i, v)
+
+        if(v != 0f) {
+          update.plusBy(k, v)
+        }
       }
       model.wtMat.increment(r, update)
     }
   }
 
-  def multiply(bkeys: (Int, Int), csr:PartCSRResult, pkey:PartitionKey, partialResult:Array[ArrayBuffer[(Int, Float)]]) = {
+  def multiply(bkeys: (Int, Int), csr:PartCSRResult, pkey:PartitionKey, partialResult:Array[ArrayBuffer[(Int, Float)]]):Unit = {
     val (bs,be) = bkeys
     val ps = pkey.getStartRow
     val pe = pkey.getEndRow
@@ -45,7 +48,11 @@ class Operator(data:Matrix,model: RModel) {
           val value = data.values(i)
           prSum += wk(id) * value
         }
-        partialResult(br - bs).append((pr, prSum))
+        if(prSum != 0f) {
+          synchronized {
+            partialResult(br - bs).append((pr, prSum))
+          }
+        }
       }
     }
   }

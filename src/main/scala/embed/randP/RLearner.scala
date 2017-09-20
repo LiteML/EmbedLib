@@ -60,7 +60,6 @@ class RLearner(ctx:TaskContext, model:RModel, data:Matrix) extends MLLearner(ctx
 
     // update for wt
     model.wtMat.clock().get()
-    // update for nk
   }
 
   def scheduleMultiply():Unit = {
@@ -77,7 +76,7 @@ class RLearner(ctx:TaskContext, model:RModel, data:Matrix) extends MLLearner(ctx
       val bkey = bkeys(i)
       val (bs, be) = bkey
       val iter = pkeys.iterator()
-      val len = bs - be
+      val len = be - bs
       val futures = new mutable.HashMap[PartitionKey, Future[PartitionGetResult]]()
       val partResult = Array.fill(len)(ArrayBuffer[(Int, Float)]())
       while (iter.hasNext) {
@@ -119,7 +118,7 @@ class RLearner(ctx:TaskContext, model:RModel, data:Matrix) extends MLLearner(ctx
     (bs until be) foreach { b =>
       val sb = new mutable.StringBuilder()
       sb.append(data.rowIds(b))
-      val row = result(b)
+      val row = result(b - bs)
       row.foreach{case(k, v) =>
           sb.append(s" $k:$v")
       }
