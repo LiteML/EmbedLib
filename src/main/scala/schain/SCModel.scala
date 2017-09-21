@@ -41,8 +41,6 @@ object SCModel{
 
   val BATCH_SIZE = "ml.schain.batchSize"
 
-  val PATH_MAT = "ml.schain.matpath"
-
 
 }
 class SCModel (conf: Configuration, _ctx: TaskContext = null) extends MLModel(conf, _ctx) {
@@ -58,8 +56,6 @@ class SCModel (conf: Configuration, _ctx: TaskContext = null) extends MLModel(co
   val parts:Int = conf.getInt(ML_PART_PER_SERVER, DEFAULT_ML_PART_PER_SERVER)
   val saveMat:Boolean = conf.getBoolean(SAVE_MAT, true)
   val batchSize:Int = conf.getInt(BATCH_SIZE,1000000)
-
-  val pathMat :String = conf.get(PATH_MAT,AngelConf.ANGEL_LOAD_MODEL_PATH + "/" + "mat1")
 
   val wtMat = PSModel[SparseFloatVector](RAND_MAT, R, N, Math.max(1, R / psNum), N)
     .setRowType(RowType.T_FLOAT_SPARSE)
