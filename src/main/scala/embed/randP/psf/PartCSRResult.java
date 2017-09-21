@@ -75,7 +75,7 @@ public class PartCSRResult extends PartitionGetResult{
 
     @Override
     public int bufferLen() {
-        return 32;
+        return 48;
     }
 
     public boolean read(float[] row) {

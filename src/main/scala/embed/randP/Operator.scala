@@ -6,8 +6,6 @@ import com.tencent.angel.ml.math.vector.SparseFloatVector
 import embed.randP.psf.PartCSRResult
 import org.apache.commons.logging.LogFactory
 
-import scala.collection.mutable.ArrayBuffer
-
 /**
   * Created by chris on 9/19/17.
   */
@@ -35,7 +33,7 @@ class Operator(data:Matrix,model: RModel) {
     }
   }
 
-  def multiply(bkeys: (Int, Int), csr:PartCSRResult, pkey:PartitionKey, partialResult:Array[ArrayBuffer[(Int, Float)]]):Unit = {
+  def multiply(bkeys: (Int, Int), csr:PartCSRResult, pkey:PartitionKey, partialResult:Array[Array[Float]]):Unit = {
     val (bs,be) = bkeys
     val ps = pkey.getStartRow
     val pe = pkey.getEndRow
@@ -48,11 +46,7 @@ class Operator(data:Matrix,model: RModel) {
           val value = data.values(i)
           prSum += wk(id) * value
         }
-        if(prSum != 0f) {
-          synchronized {
-            partialResult(br - bs).append((pr, prSum))
-          }
-        }
+        partialResult(br - bs)(pr) = prSum
       }
     }
   }

@@ -36,7 +36,7 @@ object RModel {
 class RModel (conf: Configuration, _ctx: TaskContext = null) extends MLModel(conf, _ctx) {
   val F:Int = conf.getInt(FEATURE_NUM, 1)
   val R:Int = conf.getInt(COMPONENTS_NUM, 1)
-  val S:Double = conf.getDouble(PARAM_S, 3d)
+  val S:Double = conf.getDouble(PARAM_S, 10d)
 
   // Initializing model matrices
   val threadNum:Int = conf.getInt(ML_WORKER_THREAD_NUM, DEFAULT_ML_WORKER_THREAD_NUM)

@@ -63,7 +63,7 @@ class RLearner(ctx:TaskContext, model:RModel, data:Matrix) extends MLLearner(ctx
   }
 
   def scheduleMultiply():Unit = {
-    class Task(operator: Operator,pkey:PartitionKey,csr:PartCSRResult,dkey:(Int,Int),partResult:Array[ArrayBuffer[(Int,Float)]]) extends Thread {
+    class Task(operator: Operator,pkey:PartitionKey,csr:PartCSRResult,dkey:(Int,Int),partResult:Array[Array[Float]]) extends Thread {
       override def run():Unit = {
         operator.multiply(dkey,csr,pkey,partResult)
         queue.add(operator)
@@ -78,7 +78,7 @@ class RLearner(ctx:TaskContext, model:RModel, data:Matrix) extends MLLearner(ctx
       val iter = pkeys.iterator()
       val len = be - bs
       val futures = new mutable.HashMap[PartitionKey, Future[PartitionGetResult]]()
-      val partResult = Array.fill(len)(ArrayBuffer[(Int, Float)]())
+      val partResult = Array.ofDim[Float](len, model.R)
       while (iter.hasNext) {
         val pkey = iter.next()
         val param = new PartitionGetParam(model.wtMat.getMatrixId, pkey)
@@ -94,7 +94,7 @@ class RLearner(ctx:TaskContext, model:RModel, data:Matrix) extends MLLearner(ctx
           if (future.isDone) {
             val operator = queue.take()
             future.get() match {
-              case csr: PartCSRResult => executor.execute(new Task(operator, pkey, csr, bkey,partResult))
+              case csr: PartCSRResult => executor.execute(new Task(operator, pkey, csr, bkey, partResult))
               case _ => throw new AngelException("should by PartCSRResult")
             }
             futures.remove(pkey)
@@ -105,7 +105,7 @@ class RLearner(ctx:TaskContext, model:RModel, data:Matrix) extends MLLearner(ctx
     }
   }
 
-  def savePartResult(result:Array[ArrayBuffer[(Int, Float)]], batch:Int,block: (Int, Int)): Unit = {
+  def savePartResult(result:Array[Array[Float]], batch:Int,block: (Int, Int)): Unit = {
     LOG.info(s"save $batch")
     val dir = conf.get(AngelConf.ANGEL_SAVE_MODEL_PATH)
     val base = dir + "/" + s"batch_$batch"
@@ -119,7 +119,7 @@ class RLearner(ctx:TaskContext, model:RModel, data:Matrix) extends MLLearner(ctx
       val sb = new mutable.StringBuilder()
       sb.append(data.rowIds(b))
       val row = result(b - bs)
-      row.foreach{case(k, v) =>
+      row.zipWithIndex.filter(f => f._1 != 0f).foreach{case(v, k) =>
           sb.append(s" $k:$v")
       }
       sb.append("\n")
