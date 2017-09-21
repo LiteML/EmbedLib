@@ -25,9 +25,9 @@ object SCModel{
 
   val PARAM_S="ml.schain.s"
 
-  val MATRIX_ONE="ml.schain.Dmat1"
+  val MATDIM_ONE="ml.schain.Dmat1"
 
-  val MATRIX_TWO="ml.schain.Dmat2"
+  val MATDIM_TWO="ml.schain.Dmat2"
 
   val SAMPLE = "ml.schain.sampleSize"
 
@@ -49,8 +49,8 @@ class SCModel (conf: Configuration, _ctx: TaskContext = null) extends MLModel(co
   val R:Int = conf.getInt(COMPONENTS_NUM, 10)
   val N:Int = conf.getInt(SAMPLE,2000000)
   val S:Double = conf.getDouble(PARAM_S, 3d)
-  val DIM_1:Int = conf.getInt(MATRIX_ONE,203)
-  val DIM_2:Int = conf.getInt(MATRIX_TWO,5000)
+  val DIM_1:Int = conf.getInt(MATDIM_ONE,203)
+  val DIM_2:Int = conf.getInt(MATDIM_TWO,5000)
 
   // Initializing model matrices
   val threadNum:Int = conf.getInt(ML_WORKER_THREAD_NUM, DEFAULT_ML_WORKER_THREAD_NUM)
