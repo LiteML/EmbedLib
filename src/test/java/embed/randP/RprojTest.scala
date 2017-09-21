@@ -9,7 +9,6 @@ import org.apache.hadoop.fs.FileSystem
 import org.apache.hadoop.mapreduce.lib.input.CombineTextInputFormat
 import org.apache.log4j.PropertyConfigurator
 import org.junit.{Before, Test}
-import embed.randP.RModel
 import embed.randP.RModel._
 /**
   * Created by chris on 9/20/17.
@@ -50,7 +49,7 @@ class RprojTest {
 
     val F = 100
     val C = 10
-    val S = 3
+    val S = 10
     val B = 10
 
     conf.setInt(PARAM_S, S)
