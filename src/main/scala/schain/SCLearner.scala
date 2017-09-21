@@ -178,8 +178,8 @@ class SCLearner(ctx:TaskContext, data:SMatrix, model:SCModel) extends MLLearner(
     }
     batch = null
     if (model.saveMat) savePartResult(result, i, bkey)
+    }
   }
-}
 
 
   def savePartResult(result:Array[Array[Float]], batch:Int,block: (Int, Int)): Unit = {
