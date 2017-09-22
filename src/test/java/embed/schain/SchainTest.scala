@@ -53,6 +53,9 @@ class SchainTest {
     val S = 10
     val B = 100
     val C = 50
+    val N = 2500
+
+    conf.setInt(SAMPLE, 2500)
     conf.setInt(PARAM_S, S)
     conf.setInt(MATDIM_ONE,Dim1)
     conf.setInt(MATDIM_TWO, Dim2)
