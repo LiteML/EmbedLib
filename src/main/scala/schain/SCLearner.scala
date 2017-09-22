@@ -3,7 +3,6 @@ package schain
 import java.io.BufferedOutputStream
 import java.util.Collections
 import java.util.concurrent.{Executors, Future, LinkedBlockingQueue}
-import scala.util.Random
 import com.tencent.angel.PartitionKey
 import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.exception.AngelException
