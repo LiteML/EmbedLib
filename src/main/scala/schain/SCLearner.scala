@@ -55,8 +55,6 @@ class SCLearner(ctx:TaskContext, data:SMatrix, model:SCModel) extends MLLearner(
   (i, Math.min(data.numOfRows, i + batchSize))
   }
 
-  bkeys = Random.shuffle(bkeys)
-
 
   def scheduleInit(): Unit = {
     class Task(operator: SCOperator, pkey: PartitionKey) extends Thread {
