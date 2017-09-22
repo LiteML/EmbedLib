@@ -71,14 +71,18 @@ class RLearner(ctx:TaskContext, model:RModel, data:Matrix) extends MLLearner(ctx
       }
     val client = PSAgentContext.get().getMatrixTransportClient
     val func = new GetPartFunc(null)
-    for (i <- 0 until model.threadNum) queue.add(new Operator(data, model))
     bkeys.indices foreach { i =>
       val bkey = bkeys(i)
       val (bs, be) = bkey
       val iter = pkeys.iterator()
       val len = be - bs
+
+      for (i <- 0 until model.threadNum) queue.add(new Operator(data, model))
+
       val futures = new mutable.HashMap[PartitionKey, Future[PartitionGetResult]]()
+
       val partResult = Array.ofDim[Float](len, model.R)
+
       while (iter.hasNext) {
         val pkey = iter.next()
         val param = new PartitionGetParam(model.wtMat.getMatrixId, pkey)
@@ -101,6 +105,7 @@ class RLearner(ctx:TaskContext, model:RModel, data:Matrix) extends MLLearner(ctx
           }
         }
       }
+      for (i <- 0 until model.threadNum) queue.take()
       if(model.saveMat) savePartResult(partResult,i,bkey)
     }
   }
