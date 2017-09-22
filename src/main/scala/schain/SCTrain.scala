@@ -34,6 +34,7 @@ class SCTrain(val ctx: TaskContext) extends
 
     val train = new SCLearner(ctx, data, model)
     train.scheduleInit()
+
     train.scheduleMultiply()
 
     // save doc_topic
@@ -63,7 +64,7 @@ class SCTrain(val ctx: TaskContext) extends
         }
       }
       model.mat1.increment(Integer.parseInt(parts(0)), vector1)
-      model.mat2.increment(Integer.parseInt(parts(1)), vector2)
+      model.mat2.increment(Integer.parseInt(parts(0)), vector2)
     }
     reader.close()
 

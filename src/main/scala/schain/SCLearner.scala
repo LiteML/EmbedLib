@@ -3,7 +3,7 @@ package schain
 import java.io.BufferedOutputStream
 import java.util.Collections
 import java.util.concurrent.{Executors, Future, LinkedBlockingQueue}
-
+import scala.util.Random
 import com.tencent.angel.PartitionKey
 import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.exception.AngelException
@@ -51,9 +51,12 @@ class SCLearner(ctx:TaskContext, data:SMatrix, model:SCModel) extends MLLearner(
   val executor = Executors.newFixedThreadPool(model.threadNum)
 
   val batchSize = model.batchSize
-  val bkeys = (0 until data.numOfRows by batchSize) map {i =>
+  var bkeys = (0 until data.numOfRows by batchSize) map {i =>
   (i, Math.min(data.numOfRows, i + batchSize))
   }
+
+  bkeys = Random.shuffle(bkeys)
+
 
   def scheduleInit(): Unit = {
     class Task(operator: SCOperator, pkey: PartitionKey) extends Thread {
@@ -74,7 +77,7 @@ class SCLearner(ctx:TaskContext, data:SMatrix, model:SCModel) extends MLLearner(
     for (i <- 0 until model.threadNum) queue.take()
 
     // update for wt
-    model.wtMat.clock().get()
+   model.wtMat.clock().get()
   }
 
   def scheduleMultiply():Unit = {
@@ -94,7 +97,7 @@ class SCLearner(ctx:TaskContext, data:SMatrix, model:SCModel) extends MLLearner(
 
   val client = PSAgentContext.get().getMatrixTransportClient
   val func = new GetPartFunc(null)
-  for (i <- 0 until model.threadNum) queue.add(new SCOperator(data, model))
+
 
   bkeys.indices foreach { i =>
     val bkey = bkeys(i)
@@ -102,7 +105,7 @@ class SCLearner(ctx:TaskContext, data:SMatrix, model:SCModel) extends MLLearner(
     val len = be - bs
     val futures = new mutable.HashMap[PartitionKey, Future[PartitionGetResult]]()
     var batch = Array.ofDim[Float](len, model.N)
-
+    for (i <- 0 until model.threadNum) queue.add(new SCOperator(data, model))
     val iter1 = pkeyM1.iterator()
     while (iter1.hasNext) {
       val pkey = iter1.next()
@@ -161,6 +164,7 @@ class SCLearner(ctx:TaskContext, data:SMatrix, model:SCModel) extends MLLearner(
       futures.put(pkey, future)
     }
 
+
     while (futures.nonEmpty) {
       val keys = futures.keySet.iterator
       while (keys.hasNext) {
@@ -169,14 +173,16 @@ class SCLearner(ctx:TaskContext, data:SMatrix, model:SCModel) extends MLLearner(
         if (future.isDone) {
           val operator = queue.take()
           future.get() match {
-            case csr: PartCSRResult => executor.execute(new ProjTask(operator, batch,csr, pkey, result))
+            case csr: PartCSRResult => executor.execute(new ProjTask(operator, batch, csr, pkey, result))
             case _ => throw new AngelException("should by PartCSRResult")
           }
           futures.remove(pkey)
         }
       }
     }
+
     batch = null
+    (0 until model.threadNum) foreach{ _ => queue.take() }
     if (model.saveMat) savePartResult(result, i, bkey)
     }
   }
