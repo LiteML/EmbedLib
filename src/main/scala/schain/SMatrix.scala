@@ -10,8 +10,8 @@ class SRow {
   var rId:Int = _
   var len1: Int = _
   var len2: Int = _
-  var id1: Array[Short] = _
-  var id2: Array[Short] = _
+  var id1: Array[Int] = _
+  var id2: Array[Int] = _
   var value1:Array[Float] = _
   var value2:Array[Float] = _
   def this(dim1:Int, row:String) {
@@ -19,7 +19,7 @@ class SRow {
     val parts = row.split("\t")
     this.rId = Integer.parseInt(parts(0))
     val tmp = parts(1).split(" ").map{entry =>
-      (entry.split(":")(0).toShort,entry.split(":")(1).toFloat)
+      (Integer.parseInt(entry.split(":")(0)),entry.split(":")(1).toFloat)
     }
     val tmp1 = tmp.filter(f => f._1 < dim1)
     val tmp2 = tmp.filter(f => f._1 >= dim1)
@@ -27,7 +27,7 @@ class SRow {
     this.len2 = tmp2.length
     this.id1 = tmp1.map(_._1)
     this.value1 = tmp1.map(_._2)
-    this.id2 = tmp2.map(f => (f._1 - dim1).toShort)
+    this.id2 = tmp2.map(f => f._1 - dim1)
     this.value2 = tmp2.map(_._2)
   }
 
@@ -38,8 +38,8 @@ class SMatrix(val numOfRows:Int) {
   var accRow2 :Array[Int] = _
   var value1 : Array[Float] = _
   var value2 : Array[Float] = _
-  var index1:Array[Short] = _
-  var index2:Array[Short] = _
+  var index1:Array[Int] = _
+  var index2:Array[Int] = _
   var length1:Int =_
   var length2:Int = _
   var rowIds:Array[Int] = _
@@ -57,9 +57,9 @@ class SMatrix(val numOfRows:Int) {
       rowLen2(i) = row.len2.toShort
       rowIds(i) = row.rId
     }
-    index1 = Array.ofDim[Short](length1)
+    index1 = Array.ofDim[Int](length1)
     value1 = Array.ofDim[Float](length1)
-    index2 = Array.ofDim[Short](length2)
+    index2 = Array.ofDim[Int](length2)
     value2 = Array.ofDim[Float](length2)
 
     accRow1(0) = 0
