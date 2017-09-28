@@ -1,6 +1,5 @@
 package schain
 
-import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.model.{MLModel, PSModel}
 import com.tencent.angel.ml.predict.PredictResult
@@ -11,6 +10,7 @@ import com.tencent.angel.conf.AngelConf.ANGEL_PS_NUMBER
 import com.tencent.angel.ml.conf.MLConf.{DEFAULT_ML_PART_PER_SERVER, DEFAULT_ML_WORKER_THREAD_NUM, ML_PART_PER_SERVER, ML_WORKER_THREAD_NUM}
 import com.tencent.angel.ml.math.vector.SparseFloatVector
 import com.tencent.angel.protobuf.generated.MLProtos.RowType
+import embed.randP.RModel.PSBATCH_SIZE
 import schain.SCModel._
 
 /**
@@ -41,6 +41,11 @@ object SCModel{
 
   val BATCH_SIZE = "ml.schain.batchSize"
 
+  val PSBATCH_SIZE = "ml.schain.psBatchSize"
+
+  val PSRANDP_SIZE = "ml.schain.psRandPSize"
+
+
 
 }
 class SCModel (conf: Configuration, _ctx: TaskContext = null) extends MLModel(conf, _ctx) {
@@ -56,18 +61,21 @@ class SCModel (conf: Configuration, _ctx: TaskContext = null) extends MLModel(co
   val parts:Int = conf.getInt(ML_PART_PER_SERVER, DEFAULT_ML_PART_PER_SERVER)
   val saveMat:Boolean = conf.getBoolean(SAVE_MAT, true)
   val batchSize:Int = conf.getInt(BATCH_SIZE,1000000)
+  val psBatchSize:Int = conf.getInt(PSBATCH_SIZE,1000)
+  val psRandPSize:Int = conf.getInt(PSRANDP_SIZE,1000)
 
-  val wtMat = PSModel[SparseFloatVector](RAND_MAT, R, N, Math.max(1, R / psNum), N)
+
+  val wtMat = PSModel[SparseFloatVector](RAND_MAT, R, N, psRandPSize, N)
     .setRowType(RowType.T_FLOAT_SPARSE)
     .setOplogType("DENSE_FLOAT")
   addPSModel(wtMat)
 
-  val mat1 = PSModel[SparseFloatVector](MAT_ONE, N, DIM_1, Math.max(1, N / psNum), DIM_1)
+  val mat1 = PSModel[SparseFloatVector](MAT_ONE, N, DIM_1,psBatchSize, DIM_1)
     .setRowType(RowType.T_FLOAT_SPARSE)
     .setOplogType("DENSE_FLOAT")
   addPSModel(mat1)
 
-  val mat2 = PSModel[SparseFloatVector](MAT_TWO, N, DIM_2, Math.max(1, N / psNum), DIM_2)
+  val mat2 = PSModel[SparseFloatVector](MAT_TWO, N, DIM_2, psBatchSize, DIM_2)
     .setRowType(RowType.T_FLOAT_SPARSE)
     .setOplogType("DENSE_FLOAT")
   addPSModel(mat2)
