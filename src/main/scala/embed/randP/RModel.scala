@@ -32,6 +32,8 @@ object RModel {
 
   val BATCH_SIZE = "ml.randP.batchSize"
 
+  val PSBATCH_SIZE = "ml.randP.psBatchSize"
+
 }
 class RModel (conf: Configuration, _ctx: TaskContext = null) extends MLModel(conf, _ctx) {
   val F:Int = conf.getInt(FEATURE_NUM, 1)
@@ -44,9 +46,10 @@ class RModel (conf: Configuration, _ctx: TaskContext = null) extends MLModel(con
   val parts:Int = conf.getInt(ML_PART_PER_SERVER, DEFAULT_ML_PART_PER_SERVER)
   val saveMat:Boolean = conf.getBoolean(SAVE_MAT, true)
   val batchSize:Int = conf.getInt(BATCH_SIZE,1000000)
+  val psBatchSize:Int = conf.getInt(PSBATCH_SIZE,1000)
 
 
-  val wtMat = PSModel[SparseFloatVector](RAND_MAT, R, F, Math.max(1, R / psNum), F)
+  val wtMat = PSModel[SparseFloatVector](RAND_MAT, R, F, psBatchSize, F)
     .setRowType(RowType.T_FLOAT_SPARSE)
     .setOplogType("DENSE_FLOAT")
   addPSModel(wtMat)

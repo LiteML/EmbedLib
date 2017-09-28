@@ -50,13 +50,21 @@ public class PartCSRResult extends PartitionGetResult{
         try {
             row.getLock().readLock().lock();
             Int2FloatOpenHashMap map = row.getData();
+            int cnt = 0;
 
-            int cnt = map.size();
-            buf.writeShort(cnt);
             for (Map.Entry<Integer, Float> entry : map.entrySet()) {
-                buf.writeShort(entry.getKey());
+                if(entry.getValue() != 0.0) {
+                    cnt ++;
+                }
+            }
 
-                buf.writeFloat(entry.getValue());
+
+            buf.writeInt(cnt);
+            for (Map.Entry<Integer, Float> entry : map.entrySet()) {
+                if(entry.getValue() != 0.0) {
+                    buf.writeInt(entry.getKey());
+                    buf.writeFloat(entry.getValue());
+                }
             }
         } finally {
             row.getLock().readLock().unlock();
@@ -86,9 +94,9 @@ public class PartCSRResult extends PartitionGetResult{
                 // sparse
 
         Arrays.fill(row, 0f);
-        int len = buf.readShort();
+        int len = buf.readInt();
         for (int i = 0; i < len; i ++) {
-            int key = buf.readShort();
+            int key = buf.readInt();
             float val = buf.readFloat();
             row[key] = val;
         }

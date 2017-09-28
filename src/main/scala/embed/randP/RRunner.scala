@@ -18,6 +18,7 @@ class RRunner extends MLRunner {
     conf.setInt(AngelConf.ANGEL_WORKER_MAX_ATTEMPTS, 1)
     conf.setInt(AngelConf.ANGEL_WORKER_TASK_NUMBER, 1)
     conf.set(AngelConf.ANGEL_INPUTFORMAT_CLASS, classOf[BalanceInputFormat].getName)
+    conf.setBoolean(AngelConf.ANGEL_JOB_OUTPUT_PATH_DELETEONEXIST, true)
     LOG.info(s"n_tasks=${conf.getInt(AngelConf.ANGEL_WORKER_TASK_NUMBER, 0)}")
     //    train(conf, new LDAModel(conf), classOf[LDATrainTask])
 

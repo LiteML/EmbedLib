@@ -8,7 +8,7 @@ import scala.collection.mutable.ArrayBuffer
 class Row {
   var rId:Int = _
   var len: Int = _
-  var ids: Array[Short] = _
+  var ids: Array[Int] = _
   var value:Array[Short] = _
   def this(row:String) {
     this()
@@ -16,7 +16,7 @@ class Row {
     this.rId = Integer.parseInt(parts(0))
     this.len = parts(1).split(" ").length
     val tmp = parts(1).split(" ").map{entry =>
-      (entry.split(":")(0).toShort,entry.split(":")(1).toShort)
+      (Integer.parseInt(entry.split(":")(0)),entry.split(":")(1).toShort)
     }
     this.ids = tmp.map(_._1)
     this.value = tmp.map(_._2)
@@ -27,7 +27,7 @@ class Row {
 class Matrix(val numOfRows:Int) {
   var accRows :Array[Int] = _
   var values : Array[Short] = _
-  var indexes:Array[Short] = _
+  var indexes:Array[Int] = _
   var lengths:Int =_
   var rowIds:Array[Int] = _
   def build(rows :ArrayBuffer[Row]): Unit = {
@@ -41,7 +41,7 @@ class Matrix(val numOfRows:Int) {
       rowIds(i) = row.rId
     }
     values = Array.ofDim[Short](lengths)
-    indexes = Array.ofDim[Short](lengths)
+    indexes = Array.ofDim[Int](lengths)
     accRows(0) = 0
     (0 until numOfRows) foreach {i=>
       accRows(i+1) = accRows(i) + rowLens(i)
