@@ -61,8 +61,8 @@ class SCModel (conf: Configuration, _ctx: TaskContext = null) extends MLModel(co
   val parts:Int = conf.getInt(ML_PART_PER_SERVER, DEFAULT_ML_PART_PER_SERVER)
   val saveMat:Boolean = conf.getBoolean(SAVE_MAT, true)
   val batchSize:Int = conf.getInt(BATCH_SIZE,1000000)
-  val psBatchSize:Int = conf.getInt(PSBATCH_SIZE,1000)
-  val psRandPSize:Int = conf.getInt(PSRANDP_SIZE,1000)
+  val psBatchSize:Int = conf.getInt(PSBATCH_SIZE,10)
+  val psRandPSize:Int = conf.getInt(PSRANDP_SIZE,10)
 
 
   val wtMat = PSModel[SparseFloatVector](RAND_MAT, R, N, psRandPSize, N)

@@ -174,7 +174,7 @@ class Trainer(ctx:TaskContext, model:LDAModel,
           val sampler = queue.take()
           future.get() match {
             case csr: PartCSRResult => executor.execute(new Task(sampler, pkey, csr))
-            case _ => throw new AngelException("should by PartCSRResult")
+            case _ => throw new AngelException("should by FloatPartCSRResult")
           }
           futures.remove(pkey)
         }
@@ -363,7 +363,7 @@ class Trainer(ctx:TaskContext, model:LDAModel,
           val sampler = queue.take()
           future.get() match {
             case csr: PartCSRResult => executor.execute(new Task(sampler, pkey, csr))
-            case _ => throw new AngelException("should by PartCSRResult")
+            case _ => throw new AngelException("should by FloatPartCSRResult")
           }
           futures.remove(pkey)
         }
@@ -421,7 +421,7 @@ class Trainer(ctx:TaskContext, model:LDAModel,
           val sampler = queue.take()
           future.get() match {
             case csr: PartCSRResult => executor.execute(new Task(sampler, pkey, csr))
-            case _ => throw new AngelException("should by PartCSRResult")
+            case _ => throw new AngelException("should by FloatPartCSRResult")
           }
           futures.remove(pkey)
         }

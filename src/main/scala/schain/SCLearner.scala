@@ -3,6 +3,7 @@ package schain
 import java.io.BufferedOutputStream
 import java.util.Collections
 import java.util.concurrent.{Executors, Future, LinkedBlockingQueue}
+
 import com.tencent.angel.PartitionKey
 import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.exception.AngelException
@@ -14,7 +15,7 @@ import com.tencent.angel.psagent.PSAgentContext
 import com.tencent.angel.utils.HdfsUtil
 import com.tencent.angel.worker.storage.DataBlock
 import com.tencent.angel.worker.task.TaskContext
-import embed.randP.psf.{GetPartFunc, PartCSRResult}
+import psf.{FloatPartCSRResult, GetFloatPartFunc, PartCSRFloatResult, PartCSRResult}
 import org.apache.commons.logging.{Log, LogFactory}
 import org.apache.hadoop.fs.Path
 
@@ -78,14 +79,14 @@ class SCLearner(ctx:TaskContext, data:SMatrix, model:SCModel) extends MLLearner(
   }
 
   def scheduleMultiply():Unit = {
-    class MultiTask(operator: SCOperator, pkey: PartitionKey, csr: PartCSRResult, dkey: (Int, Int), partResult: Array[Array[Float]], label:Int) extends Thread {
+    class MultiTask(operator: SCOperator, pkey: PartitionKey, csr: FloatPartCSRResult, dkey: (Int, Int), partResult: Array[Array[Float]], label:Int) extends Thread {
       override def run(): Unit = {
         operator.multiply(dkey, csr, pkey, partResult, label)
         queue.add(operator)
       }
     }
 
-    class ProjTask(operator: SCOperator, batch : Array[Array[Float]], csr:PartCSRResult, pkey:PartitionKey, result:Array[Array[Float]]) extends Thread {
+    class ProjTask(operator: SCOperator, batch : Array[Array[Float]], csr:FloatPartCSRResult, pkey:PartitionKey, result:Array[Array[Float]]) extends Thread {
       override def run(): Unit = {
         operator.proj(batch,csr,pkey, result)
         queue.add(operator)
@@ -93,7 +94,7 @@ class SCLearner(ctx:TaskContext, data:SMatrix, model:SCModel) extends MLLearner(
     }
 
   val client = PSAgentContext.get().getMatrixTransportClient
-  val func = new GetPartFunc(null)
+  val func = new GetFloatPartFunc(null)
 
 
   bkeys.indices foreach { i =>
@@ -119,8 +120,8 @@ class SCLearner(ctx:TaskContext, data:SMatrix, model:SCModel) extends MLLearner(
         if (future.isDone) {
           val operator = queue.take()
           future.get() match {
-            case csr: PartCSRResult => executor.execute(new MultiTask(operator, pkey, csr, bkey, batch, 1))
-            case _ => throw new AngelException("should by PartCSRResult")
+            case csr: FloatPartCSRResult => executor.execute(new MultiTask(operator, pkey, csr, bkey, batch, 1))
+            case _ => throw new AngelException("should by FloatPartCSRResult")
           }
           futures.remove(pkey)
         }
@@ -143,8 +144,8 @@ class SCLearner(ctx:TaskContext, data:SMatrix, model:SCModel) extends MLLearner(
         if (future.isDone) {
           val operator = queue.take()
           future.get() match {
-            case csr: PartCSRResult => executor.execute(new MultiTask(operator, pkey, csr, bkey, batch, 2))
-            case _ => throw new AngelException("should by PartCSRResult")
+            case csr: FloatPartCSRResult => executor.execute(new MultiTask(operator, pkey, csr, bkey, batch, 2))
+            case _ => throw new AngelException("should by FloatPartCSRResult")
           }
           futures.remove(pkey)
         }
@@ -170,8 +171,8 @@ class SCLearner(ctx:TaskContext, data:SMatrix, model:SCModel) extends MLLearner(
         if (future.isDone) {
           val operator = queue.take()
           future.get() match {
-            case csr: PartCSRResult => executor.execute(new ProjTask(operator, batch, csr, pkey, result))
-            case _ => throw new AngelException("should by PartCSRResult")
+            case csr: FloatPartCSRResult => executor.execute(new ProjTask(operator, batch, csr, pkey, result))
+            case _ => throw new AngelException("should by FloatPartCSRResult")
           }
           futures.remove(pkey)
         }

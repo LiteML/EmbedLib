@@ -7,7 +7,7 @@ import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.exception.AngelException
 import com.tencent.angel.ml.MLLearner
 import com.tencent.angel.ml.feature.LabeledData
-import embed.randP.psf.{GetPartFunc, PartCSRResult}
+import psf.{FloatPartCSRResult, GetFloatPartFunc, PartCSRFloatResult}
 import com.tencent.angel.ml.matrix.psf.get.base.{PartitionGetParam, PartitionGetResult}
 import com.tencent.angel.ml.model.MLModel
 import com.tencent.angel.psagent.PSAgentContext
@@ -63,14 +63,14 @@ class RLearner(ctx:TaskContext, model:RModel, data:Matrix) extends MLLearner(ctx
   }
 
   def scheduleMultiply():Unit = {
-    class Task(operator: Operator,pkey:PartitionKey,csr:PartCSRResult,dkey:(Int,Int),partResult:Array[Array[Float]]) extends Thread {
+    class Task(operator: Operator, pkey:PartitionKey, csr:FloatPartCSRResult, dkey:(Int,Int), partResult:Array[Array[Float]]) extends Thread {
       override def run():Unit = {
         operator.multiply(dkey,csr,pkey,partResult)
         queue.add(operator)
         }
       }
     val client = PSAgentContext.get().getMatrixTransportClient
-    val func = new GetPartFunc(null)
+    val func = new GetFloatPartFunc(null)
     bkeys.indices foreach { i =>
       val bkey = bkeys(i)
       val (bs, be) = bkey
@@ -98,8 +98,8 @@ class RLearner(ctx:TaskContext, model:RModel, data:Matrix) extends MLLearner(ctx
           if (future.isDone) {
             val operator = queue.take()
             future.get() match {
-              case csr: PartCSRResult => executor.execute(new Task(operator, pkey, csr, bkey, partResult))
-              case _ => throw new AngelException("should by PartCSRResult")
+              case csr: FloatPartCSRResult => executor.execute(new Task(operator, pkey, csr, bkey, partResult))
+              case _ => throw new AngelException("should by FloatPartCSRResult")
             }
             futures.remove(pkey)
           }

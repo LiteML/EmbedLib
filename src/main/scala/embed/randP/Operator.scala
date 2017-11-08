@@ -3,7 +3,7 @@ package embed.randP
 
 import com.tencent.angel.PartitionKey
 import com.tencent.angel.ml.math.vector.SparseFloatVector
-import embed.randP.psf.PartCSRResult
+import psf.{FloatPartCSRResult, PartCSRResult}
 import org.apache.commons.logging.LogFactory
 
 /**
@@ -33,7 +33,7 @@ class Operator(data:Matrix,model: RModel) {
     }
   }
 
-  def multiply(bkeys: (Int, Int), csr:PartCSRResult, pkey:PartitionKey, partialResult:Array[Array[Float]]):Unit = {
+  def multiply(bkeys: (Int, Int), csr:FloatPartCSRResult, pkey:PartitionKey, partialResult:Array[Array[Float]]):Unit = {
     val (bs,be) = bkeys
     val ps = pkey.getStartRow
     val pe = pkey.getEndRow

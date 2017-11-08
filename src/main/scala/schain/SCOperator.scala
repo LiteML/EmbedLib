@@ -3,7 +3,7 @@ package schain
 import com.tencent.angel.PartitionKey
 import com.tencent.angel.ml.math.vector.SparseFloatVector
 import embed.randP.Sampling
-import embed.randP.psf.PartCSRResult
+import psf.{FloatPartCSRResult, PartCSRFloatResult}
 
 /**
   * Created by chris on 9/21/17.
@@ -29,7 +29,7 @@ class SCOperator(data:SMatrix, model: SCModel) {
     }
   }
 
-  def multiply(bkeys: (Int, Int), csr:PartCSRResult, pkey:PartitionKey, partialResult:Array[Array[Float]], label:Int):Unit = {
+  def multiply(bkeys: (Int, Int), csr:FloatPartCSRResult, pkey:PartitionKey, partialResult:Array[Array[Float]], label:Int):Unit = {
     val (bs,be) = bkeys
     val ps = pkey.getStartRow
     val pe = pkey.getEndRow
@@ -59,7 +59,7 @@ class SCOperator(data:SMatrix, model: SCModel) {
     }
   }
 
-  def proj(batch : Array[Array[Float]], csr:PartCSRResult, pkey:PartitionKey, result:Array[Array[Float]]): Unit = {
+  def proj(batch : Array[Array[Float]], csr:FloatPartCSRResult, pkey:PartitionKey, result:Array[Array[Float]]): Unit = {
     val ps = pkey.getStartRow
     val pe = pkey.getEndRow
     (ps until pe) foreach { pr =>

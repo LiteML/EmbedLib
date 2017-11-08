@@ -1,4 +1,4 @@
-package embed.randP.psf;
+package psf;
 
 import com.tencent.angel.exception.AngelException;
 import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetResult;
@@ -17,19 +17,19 @@ import java.util.Map;
 /**
  * Created by chris on 9/19/17.
  */
-public class PartCSRResult extends PartitionGetResult{
-    private static final Log LOG = LogFactory.getLog(PartCSRResult.class);
+public class FloatPartCSRResult extends PartitionGetResult{
+    private static final Log LOG = LogFactory.getLog(FloatPartCSRResult.class);
 
     private List<ServerRow> splits;
     private ByteBuf buf;
     private int len;
     private int readerIdx;
 
-    public PartCSRResult(List<ServerRow> splits) {
+    public FloatPartCSRResult(List<ServerRow> splits) {
         this.splits = splits;
     }
 
-    public PartCSRResult() {}
+    public FloatPartCSRResult() {}
 
     @Override
     public void serialize(ByteBuf buf) {
