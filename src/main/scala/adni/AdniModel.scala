@@ -99,7 +99,7 @@ class AdniModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel(c
     if(0.2 < (1.0/c5 + (4.0*c6) / (3.0*c3) + 0.5/c1 + 0.5/ c2)) throw new Exception("condition 8 violated")
   }
 
-  def lTlastEpsilon(): (Int,Int,Float)= {
+  def lTlastEpsilon(): (Int, Int, Float)= {
     val l = Math.ceil((Math.log(vol)/ Math.log(2d)) / 2)
     val tlast = (l + 1) * Math.ceil(2.0 /(phi * phi) * Math.log(c1 * (l +2) * Math.sqrt(vol / 2.0)))
     val epsilon = 1.0 / (c3 * (l + 2) * tlast * (2 << b))

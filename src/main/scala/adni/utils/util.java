@@ -52,13 +52,13 @@ public class util {
             }
         }
 
-        if (firstListIndex <firstList.size()) {
+        while (firstListIndex <firstList.size()) {
             Entry<K,Entry<V,V>> current = secondList.get(secondListIndex);
             mergedList.add(current);
             firstListIndex++;
         }
 
-        if (secondListIndex < secondList.size()) {
+        while (secondListIndex < secondList.size()) {
             Entry<K,Entry<V,V>> current = secondList.get(secondListIndex);
             mergedList.add(current);
             secondListIndex++;

@@ -18,12 +18,11 @@ public class ListPartitionAggrResult extends PartitionGetResult {
     @Override
     public void serialize(ByteBuf buf) {
         buf.writeInt(result.size());
-        for (int i = 0; i < result.size(); i++) {
-            Entry<Integer,Entry<Float,Float>> entry = result.get(i);
+        for (Entry<Integer,Entry<Float,Float>> entry: result) {
             buf.writeInt(entry.getKey());
             buf.writeFloat(entry.getValue().getKey());
             buf.writeFloat(entry.getValue().getValue());
-        };
+        }
     }
 
     @Override

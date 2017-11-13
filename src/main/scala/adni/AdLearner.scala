@@ -55,7 +55,6 @@ class AdLearner(ctx:TaskContext, model:AdniModel,
     }
     model.mVec.increment(0,sedVec)
     model.mVec.clock().get()
-    val ll = 0
     ctx.incEpoch()
   }
 
@@ -116,7 +115,7 @@ class AdLearner(ctx:TaskContext, model:AdniModel,
     model.mVec.clock().get()
   }
 
-  def ConditionCheck():Unit = {
+  def ConditionsCheck():Unit = {
 
     val sVec = model.mVec.get(new SSetFunc(model.mVec.getMatrixId())) match {
       case r : ListAggrResult => r.getResult
@@ -177,7 +176,7 @@ class AdLearner(ctx:TaskContext, model:AdniModel,
       scheduleMultiply()
       if(epoch % 10 == 0) {
         if(ctx.getTaskIndex == 0) {
-          ConditionCheck()
+          ConditionsCheck()
           if(qualify){
             break
           }

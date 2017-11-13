@@ -1,8 +1,6 @@
 package adni
 
-import java.util.concurrent.ConcurrentMap
-
-import adni.psf.{DegreePartCSRResult, FloatPartCSRResult}
+import adni.psf. FloatPartCSRResult
 import structures.CSRMatrix
 
 import scala.collection.mutable
@@ -28,14 +26,8 @@ class AdOperator(csrMatrix:CSRMatrix[Float],model:AdniModel) {
     }
 
     (0 until csrMatrix.numOfRows) foreach {i =>
-      result(i) += csrMatrix.dotRow(mVec.toMap, i)
+      result(i) += csrMatrix.dotRow(mVec, i)
     }
     mVec.clear()
-  }
-
-  def degInsert(csr:DegreePartCSRResult,
-               degs:ConcurrentMap[Int,Float]
-               ): Unit = {
-    csr.read(degs)
   }
 }
