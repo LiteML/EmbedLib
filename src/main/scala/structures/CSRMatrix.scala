@@ -1,6 +1,7 @@
 package structures
 
 import scala.collection.mutable
+import scala.collection.Map
 import scala.collection.mutable.ArrayBuffer
 import scala.reflect.ClassTag
 /**
@@ -14,7 +15,7 @@ class CSRMatrix[T:ClassTag](val values:Array[T],val rows:Array[Int], val columns
   val numOfValues: Int = values.length
   val (numOfRows, numOfColumns) = shape
   val rowLens: Array[Int] = Array.ofDim[Int](numOfRows)
-  val offSet:Array[Int] = Array.ofDim[Int](numOfRows + 1)
+  val offSet: Array[Int] = Array.ofDim[Int](numOfRows + 1)
   (0 until numOfValues) foreach{i =>
     rowLens(rows(i)) += 1
   }
@@ -113,7 +114,7 @@ class CSRMatrix[T:ClassTag](val values:Array[T],val rows:Array[Int], val columns
 
   def dot[Z:ClassTag](vector:Map[Int, Z])(implicit ev: T => Z, num:Numeric[Z]): Array[Z] = {
     val dotProduct:Array[Z] = Array.ofDim[Z](numOfRows)
-    if(vector.size > numOfColumns) {
+    if(vector.size <= numOfColumns) {
       (0 until numOfRows) foreach{ i =>
         (offSet(i) until offSet(i + 1)) foreach{ z =>
           vector.get(columns(z)) match {
@@ -121,7 +122,7 @@ class CSRMatrix[T:ClassTag](val values:Array[T],val rows:Array[Int], val columns
               val prod = num.times(v, values(z))
               dotProduct(i) = num.plus(dotProduct(i), prod)
             }
-            case None => ???
+            case None => _
           }
 
         }
@@ -134,14 +135,14 @@ class CSRMatrix[T:ClassTag](val values:Array[T],val rows:Array[Int], val columns
 
   def dotRow[Z:ClassTag](vector:Map[Int, Z], rowNum:Int)(implicit ev: T => Z, num:Numeric[Z]): Z = {
     var dotProduct:Z = num.fromInt(0)
-    if(vector.size > numOfColumns) {
+    if(vector.size <= numOfColumns) {
         (offSet(rowNum) until offSet(rowNum + 1)) foreach{ z =>
           vector.get(columns(z)) match {
             case Some(v) => {
               val prod = num.times(v, values(z))
               dotProduct = num.plus(dotProduct, prod)
             }
-            case None => ???
+            case None => _
           }
 
         }
@@ -153,7 +154,7 @@ class CSRMatrix[T:ClassTag](val values:Array[T],val rows:Array[Int], val columns
 
   def dot1[Z:ClassTag](vector:Map[Int, Z])(implicit ev: Z => T): Array[T] = {
     val dotProduct:Array[T] = Array.ofDim[T](numOfRows)
-    if(vector.size > numOfColumns) {
+    if(vector.size <= numOfColumns) {
       (0 until numOfRows) foreach{ i =>
         (offSet(i) until offSet(i + 1)) foreach{ z =>
           vector.get(columns(z)) match {
@@ -161,7 +162,7 @@ class CSRMatrix[T:ClassTag](val values:Array[T],val rows:Array[Int], val columns
               val prod = num.times(v, values(z))
               dotProduct(i) = num.plus(dotProduct(i), prod)
             }
-            case None => ???
+            case None => _
           }
 
         }
@@ -174,14 +175,14 @@ class CSRMatrix[T:ClassTag](val values:Array[T],val rows:Array[Int], val columns
 
   def dotRow1[Z:ClassTag](vector:Map[Int, Z],rowNum:Int)(implicit ev: Z => T): T = {
     var dotProduct:T = num.fromInt(0)
-    if(vector.size > numOfColumns) {
+    if(vector.size <= numOfColumns) {
         (offSet(rowNum) until offSet(rowNum + 1)) foreach{ z =>
           vector.get(columns(z)) match {
             case Some(v) => {
               val prod = num.times(v, values(z))
               dotProduct = num.plus(dotProduct, prod)
             }
-            case None => ???
+            case None => _
           }
         }
     } else {
