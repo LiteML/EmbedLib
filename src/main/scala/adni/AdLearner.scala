@@ -1,20 +1,24 @@
 package adni
 
+import java.io.BufferedOutputStream
 import java.util
 import java.util.concurrent.{Executors, Future, LinkedBlockingQueue}
 
 import adni.psf._
 import com.tencent.angel.PartitionKey
+import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.exception.AngelException
 import com.tencent.angel.ml.MLLearner
 import com.tencent.angel.ml.feature.LabeledData
-import com.tencent.angel.ml.math.vector.DenseFloatVector
+import com.tencent.angel.ml.math.vector.{DenseFloatVector, DenseIntVector}
 import com.tencent.angel.ml.matrix.psf.get.base.{PartitionGetParam, PartitionGetResult}
 import com.tencent.angel.ml.model.MLModel
 import com.tencent.angel.psagent.PSAgentContext
+import com.tencent.angel.utils.HdfsUtil
 import com.tencent.angel.worker.storage.DataBlock
 import com.tencent.angel.worker.task.TaskContext
 import org.apache.commons.logging.{Log, LogFactory}
+import org.apache.hadoop.fs.Path
 import structures.CSRMatrix
 
 import scala.collection.mutable
@@ -31,13 +35,16 @@ class AdLearner(ctx:TaskContext, model:AdniModel,
     getPartitionKeyList(model.mVec.getMatrixId())
   var trunc:Array[Float] =_
   val biject:Map[Int,Int] = rowId.zipWithIndex.toMap
-  var userList:Array[Int] = _
+  var userList:mutable.Buffer[Integer] = _
   var qualify = false
-
 
   override
   def train(train: DataBlock[LabeledData], vali: DataBlock[LabeledData]): MLModel = ???
 
+  /**
+    *
+    * initialize the model
+    */
   def initialize(): Unit = {
     val degVec = new DenseFloatVector(model.V)
     val degree = data.sum(axis = 0)
@@ -68,7 +75,7 @@ class AdLearner(ctx:TaskContext, model:AdniModel,
         queue.add(operator)
       }
     }
-    val original:Array[Float] = Array.ofDim[Float](data.numOfRows)
+    val original = Array.ofDim[Float](data.numOfRows)
     val result = Array.ofDim[Float](data.numOfRows)
     val client = PSAgentContext.get().getMatrixTransportClient
     val func = new GetFloatPartFunc(null)
@@ -115,54 +122,55 @@ class AdLearner(ctx:TaskContext, model:AdniModel,
     model.mVec.clock().get()
   }
 
-  def ConditionsCheck():Unit = {
+  def ConditionsCheck(epochNum:Int):Unit = {
 
     val sVec = model.mVec.get(new SSetFunc(model.mVec.getMatrixId())) match {
       case r : ListAggrResult => r.getResult
       case _ => throw new AngelException("should be ListAggrResult")
     }
-
-    val totalUsers = sVec.map { f =>
-      if (f.getKey < model.u) 1 else 0
-    }.sum
-    if(totalUsers < model.k) {
-      qualify = false
-    } else {
       var j = model.k
-      var userNum = sVec.slice(0, j).map{f =>
-        if(f.getKey < model.u) 1 else 0
-      }.sum
+      var userNum = sVec.slice(0, j).count(p=>p.getKey <= model.u)
       var degreeSum = sVec.slice(0, j).map{f =>
         f.getValue.getKey
       }.sum
       breakable {
         while (j < sVec.size()) {
           degreeSum += sVec(j).getValue.getKey
-          val cent = if (sVec(j).getKey < model.u) 1f else 0f
+          val cent = if (sVec(j).getKey <= model.u) 1f else 0f
           userNum += cent
-          val condition1 = userNum > model.k
+          val condition1 = userNum >= model.k
           val condition2 = (degreeSum >= (2 << model.b)) && (degreeSum < model.vol * 5.0 / 6)
           val condition3 = sVec(j).getValue.getValue >= (1f / model.c4) * (model.l + 2) * (2 << model.b)
           qualify = condition1 && condition2 && condition3
-          if(qualify) {
-            userList = sVec.slice(0, j + 1).map{f=>
-              f.getKey.toInt
-            }.toArray
+          if(qualify){
+            userList = sVec.slice(0, j + 1).flatMap{f=>
+              if(f.getKey <= model.u)
+                Some(f.getKey)
+              else
+                None
+            }
             break
           } else {
             j += 1
           }
         }
       }
+    if(epochNum == model.epoch && userList.isEmpty) {
+      userList = sVec.slice(0, model.k + 1).flatMap{f=>
+        if(f.getKey <= model.u)
+          Some(f.getKey)
+        else
+          None
       }
+    }
     }
 
   def MMatrix(degree:Array[Float]):Unit = {
-    (0 until data.numOfRows) foreach{ i=>
+    (0 until data.numOfRows) foreach{i=>
       (data.offSet(i) until data.offSet(i + 1)) foreach{z =>
         if(z == i) {
           data.values(z) /= (2 * degree(i))
-          data.values(z) += (1/2)
+          data.values(z) += (1f/2)
         } else {
           data.values(z) /= (2 * degree(i))
         }
@@ -172,18 +180,42 @@ class AdLearner(ctx:TaskContext, model:AdniModel,
 
   def train() :Unit = {
     breakable{
-      (1 to model.tlast) foreach{epoch =>
+      (1 to model.epoch) foreach{epoch =>
       scheduleMultiply()
-      if(epoch % 10 == 0) {
-        if(ctx.getTaskIndex == 0) {
-          ConditionsCheck()
-          if(qualify){
-            break
-          }
+      if(epoch % 10 == 0 && ctx.getTaskIndex == 0) {
+        ConditionsCheck(epoch)
+        if(qualify){
+          val indi = new DenseIntVector(1)
+          indi.plusBy(0, 1)
+          model.indicator.increment(indi)
+          model.indicator.clock().get()
+          break
+        }
+        if(ctx.getTaskIndex != 0){
+          val indi:DenseIntVector = model.indicator.getRow(0)
+          if(indi.get(0) > 0) break
         }
       }
         ctx.incEpoch()
       }
     }
+  }
+
+
+  def saveResult(): Unit = {
+    LOG.info(s"save model")
+    val dir = conf.get(AngelConf.ANGEL_SAVE_MODEL_PATH)
+    val base = dir
+    val part = ctx.getTaskIndex
+    val dest = new Path(base,part.toString)
+    val fs = dest.getFileSystem(conf)
+    val tmp = HdfsUtil.toTmpPath(dest)
+    val out = new BufferedOutputStream(fs.create(tmp, 1.toShort))
+    val sb = new mutable.StringBuilder()
+    sb.append(userList.mkString("\t"))
+    out.write(sb.toString().getBytes("UTF-8"))
+    out.flush()
+    out.close()
+    fs.rename(tmp, dest)
   }
 }

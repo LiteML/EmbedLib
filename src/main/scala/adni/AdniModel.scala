@@ -8,8 +8,9 @@ import com.tencent.angel.worker.task.TaskContext
 import org.apache.hadoop.conf.Configuration
 import AdniModel._
 import com.tencent.angel.conf.AngelConf.ANGEL_PS_NUMBER
+import com.tencent.angel.ml.conf.MLConf
 import com.tencent.angel.ml.conf.MLConf.{DEFAULT_ML_PART_PER_SERVER, DEFAULT_ML_WORKER_THREAD_NUM, ML_PART_PER_SERVER, ML_WORKER_THREAD_NUM}
-import com.tencent.angel.ml.math.vector.DenseFloatVector
+import com.tencent.angel.ml.math.vector.{DenseFloatVector, DenseIntVector}
 import com.tencent.angel.protobuf.generated.MLProtos.RowType
 import embed.lda.warplda.LDAModel.SPLIT_NUM
 
@@ -38,6 +39,8 @@ object AdniModel {
 
   val U = "ml.adni.u"
 
+  val S = "ml.adni.s"
+
   val nodes = "ml.adni.V"
 
   val Vol = "ml.adni.vol"
@@ -46,6 +49,8 @@ object AdniModel {
 
   // model setting
   val model = "membership"
+
+  val indi = "indicator"
 
   val SAVE_MODEL = "save.model"
 
@@ -65,12 +70,16 @@ class AdniModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel(c
   val V:Int = conf.getInt(nodes, 0)
   val vol:Long = conf.getLong(Vol, 0l)
   val feq:Int = conf.getInt(Feq, 10)
+  val s:Int = conf.getInt(S,10)
+
 
   val k:Int = conf.getInt(K, 0)
   val b:Int = Math.min(conf.getInt(B, 0),61)
   val u:Int = conf.getInt(U, 0)
   this.check()
   val (l, tlast, epslion) = lTlastEpsilon()
+  val epoch = conf.getInt(MLConf.ML_EPOCH_NUM, tlast)
+
 
   val save:Boolean = conf.getBoolean(SAVE_MODEL, true)
   val threadNum: Int = conf.getInt(ML_WORKER_THREAD_NUM, DEFAULT_ML_WORKER_THREAD_NUM)
@@ -82,6 +91,12 @@ class AdniModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel(c
     .setRowType(RowType.T_FLOAT_DENSE)
     .setOplogType("DENSE_FLOAT")
   addPSModel(mVec)
+
+  val indicator:PSModel[DenseIntVector] = PSModel[DenseIntVector](indi, 1, 1, 1, 1)
+    .setRowType(RowType.T_INT_DENSE)
+    .setOplogType("DENSE_INT")
+
+  addPSModel(indicator)
 
   override
   def predict(dataSet: DataBlock[LabeledData]): DataBlock[PredictResult] = {
