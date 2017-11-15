@@ -2,6 +2,7 @@ package adni.psf
 
 import java.nio.FloatBuffer
 
+import com.tencent.angel.exception.AngelException
 import com.tencent.angel.ml.matrix.psf.get.base.PartitionGetResult
 import com.tencent.angel.ps.impl.matrix.{ServerDenseFloatRow, ServerRow}
 import io.netty.buffer.ByteBuf
@@ -27,8 +28,13 @@ class FloatPartCSRResult() extends PartitionGetResult {
 
   override def serialize(buf: ByteBuf): Unit = { // Write #rows
     // Write each row
-    serialize(buf, row.asInstanceOf[ServerDenseFloatRow])
+    row match {
+      case ServerDenseFloatRow => serialize(buf, row.asInstanceOf[ServerDenseFloatRow])
+      case _ => throw new AngelException("Adni should be set with ServerDenseFloatRow")
+    }
   }
+
+
 
   def serialize(buf: ByteBuf, row: ServerDenseFloatRow): Unit = {
     try {
@@ -65,7 +71,6 @@ class FloatPartCSRResult() extends PartitionGetResult {
 
   def read(row: mutable.Map[Int, Float]): Unit = {
     // sparse
-    row.clear()
     val len: Int = buf.readInt
     var i: Int = 0
     while (i < len) {

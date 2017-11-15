@@ -5,6 +5,7 @@ import java.util
 import java.util.concurrent.{Executors, Future, LinkedBlockingQueue}
 
 import adni.psf._
+import adni.utils.AtomicFloat
 import com.tencent.angel.PartitionKey
 import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.exception.AngelException
@@ -36,7 +37,7 @@ class AdLearner(ctx:TaskContext, model:AdniModel,
   var trunc:Array[Float] =_
   val biject:Map[Int,Int] = rowId.zipWithIndex.toMap
   var userList:mutable.Buffer[Integer] = _
-  var qualify = false
+  var qualify:Boolean = false
 
   override
   def train(train: DataBlock[LabeledData], vali: DataBlock[LabeledData]): MLModel = ???
@@ -69,14 +70,14 @@ class AdLearner(ctx:TaskContext, model:AdniModel,
   val executor = Executors.newFixedThreadPool(model.threadNum)
 
   def scheduleMultiply(): Unit = {
-    class Task(operator: AdOperator, pkey:PartitionKey, csr:FloatPartCSRResult, result:Array[Float], original:Array[Float], biject:Map[Int,Int]) extends Thread {
+    class Task(operator: AdOperator, pkey:PartitionKey, csr:FloatPartCSRResult, result :Array[AtomicFloat], original:Array[Float], biject:Map[Int,Int]) extends Thread {
       override def run():Unit = {
         operator.multiply(csr,result,original, biject)
         queue.add(operator)
       }
     }
     val original = Array.ofDim[Float](data.numOfRows)
-    val result = Array.ofDim[Float](data.numOfRows)
+    val result = Array.ofDim[AtomicFloat](data.numOfRows)
     val client = PSAgentContext.get().getMatrixTransportClient
     val func = new GetFloatPartFunc(null)
     for (i <- 0 until model.threadNum) queue.add(new AdOperator(data, model))
@@ -110,10 +111,10 @@ class AdLearner(ctx:TaskContext, model:AdniModel,
     val update:DenseFloatVector = new DenseFloatVector(model.V)
 
     (0 until data.numOfRows) foreach { i =>
-      if(original(i) >= 0 && result(i) >= trunc(i)) {
-        update.set(rowId(i),result(i) - original(i))
+      if(original(i) >= 0 && result(i).get() >= trunc(i)) {
+        update.set(rowId(i),result(i).get() - original(i))
 
-      } else if(original(i) > 0 && result(i) < trunc(i)){
+      } else if(original(i) > 0 && result(i).get() < trunc(i)){
         update.set(rowId(i), -original(i))
       }
     }
@@ -155,6 +156,7 @@ class AdLearner(ctx:TaskContext, model:AdniModel,
           }
         }
       }
+
     if(epochNum == model.epoch && userList.isEmpty) {
       userList = sVec.slice(0, model.k + 1).flatMap{f=>
         if(f.getKey <= model.u)
@@ -163,7 +165,7 @@ class AdLearner(ctx:TaskContext, model:AdniModel,
           None
       }
     }
-    }
+  }
 
   def MMatrix(degree:Array[Float]):Unit = {
     (0 until data.numOfRows) foreach{i=>

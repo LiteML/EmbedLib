@@ -1,6 +1,7 @@
 package adni
 
-import adni.psf. FloatPartCSRResult
+import adni.psf.FloatPartCSRResult
+import adni.utils.AtomicFloat
 import structures.CSRMatrix
 
 import scala.collection.mutable
@@ -11,7 +12,7 @@ class AdOperator(csrMatrix:CSRMatrix[Float],model:AdniModel) {
   val mVec: mutable.Map[Int,Float] = mutable.Map[Int,Float]()
 
   def multiply(csr:FloatPartCSRResult,
-               result:Array[Float],
+               result:Array[AtomicFloat],
                original:Array[Float],
                biject:Map[Int,Int]) = {
 
@@ -26,8 +27,9 @@ class AdOperator(csrMatrix:CSRMatrix[Float],model:AdniModel) {
     }
 
     (0 until csrMatrix.numOfRows) foreach {i =>
-      result(i) += csrMatrix.dotRow(mVec, i)
+      result(i).addAndGet(csrMatrix.dotRow(mVec, i))
     }
+
     mVec.clear()
   }
 }
