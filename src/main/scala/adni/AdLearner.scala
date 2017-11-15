@@ -43,8 +43,7 @@ class AdLearner(ctx:TaskContext, model:AdniModel,
   def train(train: DataBlock[LabeledData], vali: DataBlock[LabeledData]): MLModel = ???
 
   /**
-    *
-    * initialize the model
+    * Initialize the model
     */
   def initialize(): Unit = {
     val degVec = new DenseFloatVector(model.V)
@@ -69,6 +68,9 @@ class AdLearner(ctx:TaskContext, model:AdniModel,
   val queue = new LinkedBlockingQueue[AdOperator]()
   val executor = Executors.newFixedThreadPool(model.threadNum)
 
+  /**
+    * Matrix Multiplication
+    */
   def scheduleMultiply(): Unit = {
     class Task(operator: AdOperator, pkey:PartitionKey, csr:FloatPartCSRResult, result :Array[AtomicFloat], original:Array[Float], biject:Map[Int,Int]) extends Thread {
       override def run():Unit = {
@@ -123,6 +125,11 @@ class AdLearner(ctx:TaskContext, model:AdniModel,
     model.mVec.clock().get()
   }
 
+  /**
+    * Check whether conditions are satisfied
+    * @param epochNum
+    */
+
   def ConditionsCheck(epochNum:Int):Unit = {
 
     val sVec = model.mVec.get(new SSetFunc(model.mVec.getMatrixId())) match {
@@ -167,6 +174,11 @@ class AdLearner(ctx:TaskContext, model:AdniModel,
     }
   }
 
+  /**
+    * Get the M matrix for Multiplication
+    * @param degree
+    */
+
   def MMatrix(degree:Array[Float]):Unit = {
     (0 until data.numOfRows) foreach{i=>
       (data.offSet(i) until data.offSet(i + 1)) foreach{z =>
@@ -179,6 +191,10 @@ class AdLearner(ctx:TaskContext, model:AdniModel,
       }
     }
   }
+
+  /**
+    * Model Training
+    */
 
   def train() :Unit = {
     breakable{
@@ -203,7 +219,9 @@ class AdLearner(ctx:TaskContext, model:AdniModel,
     }
   }
 
-
+  /**
+    * Result Saving
+    */
   def saveResult(): Unit = {
     LOG.info(s"save model")
     val dir = conf.get(AngelConf.ANGEL_SAVE_MODEL_PATH)
