@@ -19,8 +19,6 @@ object FloatPartCSRResult {
 class FloatPartCSRResult() extends PartitionGetResult {
   private var row: ServerRow = _
   private var buf: ByteBuf = _
-  private var len: Int = 0
-  private var readerIdx: Int = 0
 
   def this(row: ServerRow) {
     this()
@@ -28,7 +26,6 @@ class FloatPartCSRResult() extends PartitionGetResult {
   }
 
   override def serialize(buf: ByteBuf): Unit = { // Write #rows
-    buf.writeInt(1)
     // Write each row
     serialize(buf, row.asInstanceOf[ServerDenseFloatRow])
   }
@@ -57,22 +54,16 @@ class FloatPartCSRResult() extends PartitionGetResult {
   }
 
   override def deserialize(buf: ByteBuf): Unit = {
-    this.len = buf.readInt
     this.buf = buf.duplicate
     this.buf.retain
     //    LOG.info(buf.refCnt());
-    this.readerIdx = 0
   }
 
   override def bufferLen: Int = {
      48
   }
 
-  def read(row: mutable.Map[Int, Float]): Boolean = {
-    if (readerIdx == this.len) {
-      return false
-    }
-    readerIdx += 1
+  def read(row: mutable.Map[Int, Float]): Unit = {
     // sparse
     row.clear()
     val len: Int = buf.readInt
@@ -83,10 +74,6 @@ class FloatPartCSRResult() extends PartitionGetResult {
       row.put(k, v)
       i += 1
     }
-    if (readerIdx == this.len) {
-      buf.release
-      //      LOG.info(buf.refCnt());
-    }
-    true
+    buf.release
   }
 }

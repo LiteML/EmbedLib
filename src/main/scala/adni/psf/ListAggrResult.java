@@ -7,6 +7,7 @@ import java.util.Map;
 
 /**
  * Created by chris on 11/8/17.
+ * get list result which has been sorted
  */
 public class ListAggrResult extends GetResult {
     private final List<Map.Entry<Integer,Map.Entry<Float,Float>>> result;

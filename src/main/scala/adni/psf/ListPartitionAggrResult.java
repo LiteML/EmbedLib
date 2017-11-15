@@ -9,7 +9,7 @@ import java.util.Map.Entry;
 
 
 /**
- * Created by chris on 11/7/17.
+ * Created by chris on 11/7/17. sorted on each partition
  */
 public class ListPartitionAggrResult extends PartitionGetResult {
     public List<Entry<Integer,Entry<Float,Float>>> result;

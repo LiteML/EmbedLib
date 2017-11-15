@@ -37,6 +37,13 @@ public class SSetFunc extends GetFunc{
         return new ListPartitionAggrResult(partResult);
     }
 
+    /**
+     * Sort each partition on server
+     * @param mVec
+     * @param dVec
+     * @return
+     */
+
     private List<Map.Entry<Integer,Map.Entry<Float,Float>>> sVec(ServerRow mVec, ServerRow dVec) {
         int start = (int) mVec.getStartCol();
         int end = (int) mVec.getEndCol();
