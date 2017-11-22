@@ -2,7 +2,7 @@ package adni
 
 import java.io.BufferedOutputStream
 import java.util
-import java.util.concurrent.{Executors, Future, LinkedBlockingQueue}
+import java.util.concurrent.{ExecutorService, Executors, Future, LinkedBlockingQueue}
 
 import adni.psf._
 import adni.utils.AtomicFloat
@@ -32,7 +32,7 @@ class AdLearner(ctx:TaskContext, model:AdniModel,
                 data:CSRMatrix[Float], rowId: Array[Int],
                 seeds:Array[Int]) extends MLLearner(ctx){
   val LOG:Log = LogFactory.getLog(classOf[AdLearner])
-  val pkeys: util.List[PartitionKey]= PSAgentContext.get().getMatrixPartitionRouter.
+  val pkeys:util.List[PartitionKey]= PSAgentContext.get().getMatrixPartitionRouter.
     getPartitionKeyList(model.mVec.getMatrixId())
   var trunc:Array[Float] =_
   val biject:Map[Int,Int] = rowId.zipWithIndex.toMap
@@ -65,8 +65,9 @@ class AdLearner(ctx:TaskContext, model:AdniModel,
     ctx.incEpoch()
   }
 
-  val queue = new LinkedBlockingQueue[AdOperator]()
-  val executor = Executors.newFixedThreadPool(model.threadNum)
+  val queue:LinkedBlockingQueue[AdOperator] = new LinkedBlockingQueue[AdOperator]()
+  val executor:ExecutorService = Executors.newFixedThreadPool(model.threadNum)
+
 
   /**
     * Matrix Multiplication
