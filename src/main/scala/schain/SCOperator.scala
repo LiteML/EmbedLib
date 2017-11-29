@@ -3,7 +3,7 @@ package schain
 import com.tencent.angel.PartitionKey
 import com.tencent.angel.ml.math.vector.SparseFloatVector
 import embed.randP.Sampling
-import psf.{FloatPartCSRResult, PartCSRFloatResult}
+import psf.{FloatPartCSRResult}
 
 /**
   * Created by chris on 9/21/17.

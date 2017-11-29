@@ -15,7 +15,7 @@ import com.tencent.angel.psagent.PSAgentContext
 import com.tencent.angel.utils.HdfsUtil
 import com.tencent.angel.worker.storage.DataBlock
 import com.tencent.angel.worker.task.TaskContext
-import psf.{FloatPartCSRResult, GetFloatPartFunc, PartCSRFloatResult, PartCSRResult}
+import psf.{FloatPartCSRResult, GetFloatPartFunc}
 import org.apache.commons.logging.{Log, LogFactory}
 import org.apache.hadoop.fs.Path
 

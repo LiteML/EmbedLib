@@ -19,17 +19,14 @@ class AdOperator(csrMatrix:CSRMatrix[Float],model:AdniModel) {
     csr.read(mVec)
     mVec.foreach{case(k, v) =>
         biject.get(k) match {
-          case Some(pos) => {
-            original(pos) = v
-          }
-          case None => _
+          case Some(pos) => original(pos) = v
+          case None => 0
         }
     }
 
     (0 until csrMatrix.numOfRows) foreach {i =>
       result(i).addAndGet(csrMatrix.dotRow(mVec, i))
     }
-
     mVec.clear()
   }
 }

@@ -14,6 +14,7 @@ import java.util.Map.Entry;
 public class ListPartitionAggrResult extends PartitionGetResult {
     public List<Entry<Integer,Entry<Float,Float>>> result;
     public ListPartitionAggrResult(List<Entry<Integer,Entry<Float,Float>>> result) {this.result = result;}
+    public ListPartitionAggrResult(){this.result = null;}
 
     @Override
     public void serialize(ByteBuf buf) {

@@ -7,7 +7,7 @@ import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.exception.AngelException
 import com.tencent.angel.ml.MLLearner
 import com.tencent.angel.ml.feature.LabeledData
-import psf.{FloatPartCSRResult, GetFloatPartFunc, PartCSRFloatResult}
+import psf.{FloatPartCSRResult, GetFloatPartFunc}
 import com.tencent.angel.ml.matrix.psf.get.base.{PartitionGetParam, PartitionGetResult}
 import com.tencent.angel.ml.model.MLModel
 import com.tencent.angel.psagent.PSAgentContext

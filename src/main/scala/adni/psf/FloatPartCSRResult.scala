@@ -28,9 +28,10 @@ class FloatPartCSRResult() extends PartitionGetResult {
 
   override def serialize(buf: ByteBuf): Unit = { // Write #rows
     // Write each row
-    row match {
-      case ServerDenseFloatRow => serialize(buf, row.asInstanceOf[ServerDenseFloatRow])
-      case _ => throw new AngelException("Adni should be set with ServerDenseFloatRow")
+    if (row.isInstanceOf[ServerDenseFloatRow]) {
+      serialize(buf, row.asInstanceOf[ServerDenseFloatRow])
+    } else {
+      throw new AngelException("Adni should be set with ServerDenseFloatRow")
     }
   }
 

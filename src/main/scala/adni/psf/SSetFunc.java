@@ -22,6 +22,7 @@ import java.util.Map;
 public class SSetFunc extends GetFunc{
     private static final Log LOG = LogFactory.getLog(SSetFunc.class);
     public SSetFunc(int matrixId) {super(new GetParam(matrixId));}
+    public SSetFunc(){super(null);}
 
     @Override
     public PartitionGetResult partitionGet(PartitionGetParam partParam) {

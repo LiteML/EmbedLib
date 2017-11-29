@@ -1,5 +1,5 @@
-package embed.randP
-
+package RW.Adni
+import adni.{AdTrainTask, AdniModel}
 import com.tencent.angel.client.{AngelClient, AngelClientFactory}
 import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.ml.conf.MLConf
@@ -9,13 +9,14 @@ import org.apache.hadoop.fs.FileSystem
 import org.apache.hadoop.mapreduce.lib.input.CombineTextInputFormat
 import org.apache.log4j.PropertyConfigurator
 import org.junit.{Before, Test}
-import embed.randP.RModel._
+import adni.AdniModel._
+
 /**
-  * Created by chris on 9/20/17.
+  * Created by chris on 11/28/17.
   */
-class RprojTest {
+class AdniTest {
   private val conf: Configuration = new Configuration
-  private val LOG: Log = LogFactory.getLog(classOf[RprojTest])
+  private val LOG: Log = LogFactory.getLog(classOf[AdTrainTask])
   private val LOCAL_FS: String = FileSystem.DEFAULT_FS
   private val TMP_PATH: String = System.getProperty("java.io.tmpdir", "/tmp")
   private var client: AngelClient = null
@@ -23,11 +24,11 @@ class RprojTest {
   LOG.info(System.getProperty("user.dir"))
   @Before
   def setup(): Unit = {
-    val inputPath: String = "./src/test/data/RProj/rand.train"
+    val inputPath: String = "./src/test/data/Adni/adni_data.csv"
 
     // Set basic configuration keys
     conf.setBoolean("mapred.mapper.new-api", true)
-    conf.set(AngelConf.ANGEL_TASK_USER_TASKCLASS, classOf[RTrainTask].getName)
+    conf.set(AngelConf.ANGEL_TASK_USER_TASKCLASS, classOf[AdTrainTask].getName)
 
     // Use local deploy mode
     conf.set(AngelConf.ANGEL_DEPLOY_MODE, "LOCAL")
@@ -47,19 +48,21 @@ class RprojTest {
 
     client = AngelClientFactory.get(conf)
 
-    val F = 100
-    val C = 20
-    val S = 10
-    val B = 10
+    val vol = 663542l
+    val V = 114729
+    val k = 500
+    val u = 110466
+    val s = 113322
+    val b = 1
 
-    conf.setInt(PARAM_S, S)
-    conf.setInt(FEATURE_NUM, F)
-    conf.setInt(COMPONENTS_NUM, C)
-    conf.setInt(MLConf.ML_WORKER_THREAD_NUM, 2)
-    conf.setInt(BATCH_SIZE,B)
-    conf.setInt(MLConf.ML_EPOCH_NUM, 0)
-    conf.setBoolean(SAVE_MAT, true)
-    conf.setInt(PSBATCH_SIZE, 10)
+
+    conf.setInt(nodes, V)
+    conf.setLong(Vol, vol)
+    conf.setInt(S,s)
+    conf.setInt(K, k)
+    conf.setInt(B, b)
+    conf.setInt(U, u)
+    conf.setInt(Feq, 1)
   }
 
   @Test
@@ -68,13 +71,13 @@ class RprojTest {
     client.startPSServer()
 
     //init model
-    val model = new RModel(conf)
+    val model = new AdniModel(conf)
 
     // Load model meta to client
     client.loadModel(model)
 
     // Start
-    client.runTask(classOf[RTrainTask])
+    client.runTask(classOf[AdTrainTask])
 
     // Run user task and wait for completion, user task is set in "angel.task.user.task.class"
     client.waitForCompletion()
@@ -84,4 +87,6 @@ class RprojTest {
 
     client.stop()
   }
+
+
 }

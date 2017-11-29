@@ -10,3 +10,4 @@ bin/
 project/
 lib/*
 
+/src/test/data/

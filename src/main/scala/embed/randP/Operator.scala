@@ -3,7 +3,7 @@ package embed.randP
 
 import com.tencent.angel.PartitionKey
 import com.tencent.angel.ml.math.vector.SparseFloatVector
-import psf.{FloatPartCSRResult, PartCSRResult}
+import psf.{FloatPartCSRResult}
 import org.apache.commons.logging.LogFactory
 
 /**

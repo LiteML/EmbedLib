@@ -87,7 +87,7 @@ class AdniModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel(c
   val psNum: Int = conf.getInt(ANGEL_PS_NUMBER, 1)
   val parts: Int = conf.getInt(ML_PART_PER_SERVER, DEFAULT_ML_PART_PER_SERVER)
 
-  val mVec:PSModel[DenseFloatVector] = PSModel[DenseFloatVector](model, 2, V, 2, Math.min(1, V/psNum))
+  val mVec:PSModel[DenseFloatVector] = PSModel[DenseFloatVector](model, 2, V, 2, V / psNum)
     .setRowType(RowType.T_FLOAT_DENSE)
     .setOplogType("DENSE_FLOAT")
   addPSModel(mVec)
@@ -117,7 +117,7 @@ class AdniModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel(c
   def lTlastEpsilon(): (Int, Int, Float)= {
     val l = Math.ceil((Math.log(vol)/ Math.log(2d)) / 2)
     val tlast = (l + 1) * Math.ceil(2.0 /(phi * phi) * Math.log(c1 * (l +2) * Math.sqrt(vol / 2.0)))
-    val epsilon = 1.0 / (c3 * (l + 2) * tlast * (2 << b))
+    val epsilon = 1.0 / (c3 * (l + 2) * tlast * math.pow(2, b))
     (l.toInt, tlast.toInt, epsilon.toFloat)
   }
 }

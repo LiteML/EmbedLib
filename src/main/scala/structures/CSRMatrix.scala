@@ -122,7 +122,7 @@ class CSRMatrix[T:ClassTag](val values:Array[T],val rows:Array[Int], val columns
               val prod = num.times(v, values(z))
               dotProduct(i) = num.plus(dotProduct(i), prod)
             }
-            case None => _
+            case None => 0
           }
 
         }
@@ -142,7 +142,7 @@ class CSRMatrix[T:ClassTag](val values:Array[T],val rows:Array[Int], val columns
               val prod = num.times(v, values(z))
               dotProduct = num.plus(dotProduct, prod)
             }
-            case None => _
+            case None => 0
           }
 
         }
@@ -162,7 +162,7 @@ class CSRMatrix[T:ClassTag](val values:Array[T],val rows:Array[Int], val columns
               val prod = num.times(v, values(z))
               dotProduct(i) = num.plus(dotProduct(i), prod)
             }
-            case None => _
+            case None => 0
           }
 
         }
@@ -182,7 +182,7 @@ class CSRMatrix[T:ClassTag](val values:Array[T],val rows:Array[Int], val columns
               val prod = num.times(v, values(z))
               dotProduct = num.plus(dotProduct, prod)
             }
-            case None => _
+            case None => 0
           }
         }
     } else {

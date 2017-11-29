@@ -5,11 +5,14 @@ import com.tencent.angel.worker.task.{BaseTask, TaskContext}
 import org.apache.commons.logging.LogFactory
 import org.apache.hadoop.io.{LongWritable, Text}
 import structures.{CSRMatrix, Row}
-
+import scala.language.implicitConversions
 /**
   * Created by chris on 11/14/17.
   */
-class AdTrainTask(val ctx: TaskContext) extends BaseTask[LongWritable, Text, Row](ctx) {
+object sf{
+  implicit def string2float(str: String) = {str.toFloat}
+}
+class AdTrainTask(val ctx: TaskContext) extends BaseTask[LongWritable, Text, Row[Float]](ctx) {
   private val LOG = LogFactory.getLog(classOf[AdTrainTask])
 
   var incidence = new MemoryDataBlock[Row[Float]](-1)
@@ -17,9 +20,9 @@ class AdTrainTask(val ctx: TaskContext) extends BaseTask[LongWritable, Text, Row
   var did = 0
   var rowId:Array[Int] = _
 
-
   override
   def parse(key: LongWritable, value: Text): Row[Float] = {
+    import sf._
     val row  = new Row[Float](value.toString)
     if (row != null) {
       did += 1
@@ -55,15 +58,17 @@ class AdTrainTask(val ctx: TaskContext) extends BaseTask[LongWritable, Text, Row
     incidence.clean()
     new CSRMatrix[Float](values,rows,columns,shape)
   }
+
   @throws[Exception]
   def run(ctx: TaskContext): Unit = {
     val model = new AdniModel(ctx.getConf, ctx)
-    LOG.info(s"V=${model.V} K=${model.k} PartRows=$did Entries=$N" + s"threadNum=${model.threadNum}")
+    LOG.info(s"V=${model.V} K=${model.k} PartRows=$did Entries=$N" + s" threadNum=${model.threadNum}")
     val data = build((did, model.V))
     val seeds = rowId.filter{f =>
       f >= model.s
     }
     val learner = new AdLearner(ctx, model, data, rowId: Array[Int], seeds)
+    learner.initialize()
     learner.train()
     if(model.save && ctx.getTaskIndex == 0) learner.saveResult()
   }

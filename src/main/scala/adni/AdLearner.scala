@@ -22,6 +22,7 @@ import org.apache.commons.logging.{Log, LogFactory}
 import org.apache.hadoop.fs.Path
 import structures.CSRMatrix
 
+import scala.language.implicitConversions
 import scala.collection.mutable
 import scala.collection.JavaConversions._
 import scala.util.control.Breaks._
@@ -48,6 +49,7 @@ class AdLearner(ctx:TaskContext, model:AdniModel,
   def initialize(): Unit = {
     val degVec = new DenseFloatVector(model.V)
     val degree = data.sum(axis = 0)
+
     degree.indices.foreach{ i =>
       degVec.plusBy(rowId(i), degree(i))
     }
@@ -80,7 +82,7 @@ class AdLearner(ctx:TaskContext, model:AdniModel,
       }
     }
     val original = Array.ofDim[Float](data.numOfRows)
-    val result = Array.ofDim[AtomicFloat](data.numOfRows)
+    val result = Array.fill(data.numOfRows)(new AtomicFloat())
     val client = PSAgentContext.get().getMatrixTransportClient
     val func = new GetFloatPartFunc(null)
     for (i <- 0 until model.threadNum) queue.add(new AdOperator(data, model))
@@ -114,10 +116,10 @@ class AdLearner(ctx:TaskContext, model:AdniModel,
     val update:DenseFloatVector = new DenseFloatVector(model.V)
 
     (0 until data.numOfRows) foreach { i =>
-      if(original(i) >= 0 && result(i).get() >= trunc(i)) {
-        update.set(rowId(i),result(i).get() - original(i))
+      if(original(i) >= 0 && result(i).get >= trunc(i)) {
+        update.set(rowId(i),result(i).get - original(i))
 
-      } else if(original(i) > 0 && result(i).get() < trunc(i)){
+      } else if(original(i) > 0 && result(i).get < trunc(i)){
         update.set(rowId(i), -original(i))
       }
     }
@@ -131,25 +133,24 @@ class AdLearner(ctx:TaskContext, model:AdniModel,
     * @param epochNum
     */
 
-  def ConditionsCheck(epochNum:Int):Unit = {
-
+  def ConditionsCheck(epochNum:Int): Unit = {
     val sVec = model.mVec.get(new SSetFunc(model.mVec.getMatrixId())) match {
       case r : ListAggrResult => r.getResult
       case _ => throw new AngelException("should be ListAggrResult")
     }
       var j = model.k
-      var userNum = sVec.slice(0, j).count(p=>p.getKey <= model.u)
+      var userNum:Int = sVec.slice(0, j).count(p=>p.getKey <= model.u)
       var degreeSum = sVec.slice(0, j).map{f =>
-        f.getValue.getKey
+        f.getValue.getKey.toFloat
       }.sum
       breakable {
         while (j < sVec.size()) {
           degreeSum += sVec(j).getValue.getKey
-          val cent = if (sVec(j).getKey <= model.u) 1f else 0f
+          val cent = if (sVec(j).getKey <= model.u) 1 else 0
           userNum += cent
           val condition1 = userNum >= model.k
-          val condition2 = (degreeSum >= (2 << model.b)) && (degreeSum < model.vol * 5.0 / 6)
-          val condition3 = sVec(j).getValue.getValue >= (1f / model.c4) * (model.l + 2) * (2 << model.b)
+          val condition2 = (degreeSum >= math.pow(2, model.b)) && (degreeSum < model.vol * 5.0 / 6)
+          val condition3 = sVec(j).getValue.getValue >= (1f / model.c4) * (model.l + 2) * math.pow(2, model.b)
           qualify = condition1 && condition2 && condition3
           if(qualify){
             userList = sVec.slice(0, j + 1).flatMap{f=>
@@ -165,7 +166,7 @@ class AdLearner(ctx:TaskContext, model:AdniModel,
         }
       }
 
-    if(epochNum == model.epoch && userList.isEmpty) {
+    if(epochNum == model.epoch && userList == null) {
       userList = sVec.slice(0, model.k + 1).flatMap{f=>
         if(f.getKey <= model.u)
           Some(f.getKey)
@@ -201,20 +202,17 @@ class AdLearner(ctx:TaskContext, model:AdniModel,
     breakable{
       (1 to model.epoch) foreach{epoch =>
       scheduleMultiply()
-      if(epoch % 10 == 0 && ctx.getTaskIndex == 0) {
+      if(epoch % model.feq == 0 && ctx.getTaskIndex == 0) {
         ConditionsCheck(epoch)
         if(qualify){
           val indi = new DenseIntVector(1)
           indi.plusBy(0, 1)
-          model.indicator.increment(indi)
+          model.indicator.increment(0,indi)
           model.indicator.clock().get()
-          break
-        }
-        if(ctx.getTaskIndex != 0){
-          val indi:DenseIntVector = model.indicator.getRow(0)
-          if(indi.get(0) > 0) break
         }
       }
+        val indi:DenseIntVector = model.indicator.getRow(0)
+        if(indi.get(0) > 0) break
         ctx.incEpoch()
       }
     }
