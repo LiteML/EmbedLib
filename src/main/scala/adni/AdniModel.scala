@@ -12,7 +12,6 @@ import com.tencent.angel.ml.conf.MLConf
 import com.tencent.angel.ml.conf.MLConf.{DEFAULT_ML_PART_PER_SERVER, DEFAULT_ML_WORKER_THREAD_NUM, ML_PART_PER_SERVER, ML_WORKER_THREAD_NUM}
 import com.tencent.angel.ml.math.vector.{DenseFloatVector, DenseIntVector}
 import com.tencent.angel.protobuf.generated.MLProtos.RowType
-import embed.lda.warplda.LDAModel.SPLIT_NUM
 
 /**
   * Created by chris on 10/30/17.
@@ -83,7 +82,6 @@ class AdniModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel(c
 
   val save:Boolean = conf.getBoolean(SAVE_MODEL, true)
   val threadNum: Int = conf.getInt(ML_WORKER_THREAD_NUM, DEFAULT_ML_WORKER_THREAD_NUM)
-  val splitNum: Int = conf.getInt(SPLIT_NUM, 1)
   val psNum: Int = conf.getInt(ANGEL_PS_NUMBER, 1)
   val parts: Int = conf.getInt(ML_PART_PER_SERVER, DEFAULT_ML_PART_PER_SERVER)
 
