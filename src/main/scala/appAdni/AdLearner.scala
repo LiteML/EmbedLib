@@ -5,6 +5,7 @@ import java.util
 import java.util.{Collections, Random}
 import java.util.concurrent.{ExecutorService, Executors, Future, LinkedBlockingQueue}
 
+import adni.psf.{FloatPartCSRResult, GetFloatPartFunc, ListAggrResult}
 import com.tencent.angel.PartitionKey
 import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.exception.AngelException
@@ -20,6 +21,7 @@ import com.tencent.angel.worker.task.TaskContext
 import org.apache.commons.logging.{Log, LogFactory}
 import org.apache.hadoop.fs.Path
 import structures.CSRMatrix
+
 import scala.collection.Set
 import scala.collection.JavaConversions._
 import scala.collection.mutable
@@ -89,7 +91,7 @@ class AdLearner(ctx:TaskContext, model:AdniModel,
     * Matrix Multiplication
     */
   def scheduleMultiply(): Unit = {
-    class Task(operator: AdOperator, pkey:PartitionKey, csr:psf.FloatPartCSRResult, result :Array[utils.AtomicFloat], original:Array[Float], biject:Map[Int,Int]) extends Thread {
+    class Task(operator: AdOperator, pkey:PartitionKey, csr:FloatPartCSRResult, result :Array[utils.AtomicFloat], original:Array[Float], biject:Map[Int,Int]) extends Thread {
       override def run():Unit = {
         operator.multiply(csr,result,original, biject)
         queue.add(operator)
@@ -98,7 +100,7 @@ class AdLearner(ctx:TaskContext, model:AdniModel,
     val original = Array.ofDim[Float](data.numOfRows)
     val result = Array.fill(data.numOfRows)(new utils.AtomicFloat())
     val client = PSAgentContext.get().getMatrixTransportClient
-    val func = new psf.GetFloatPartFunc(null)
+    val func = new GetFloatPartFunc(null)
     for (i <- 0 until model.threadNum) queue.add(new AdOperator(data, model))
 
     val iter = pkeys.iterator()
@@ -117,7 +119,7 @@ class AdLearner(ctx:TaskContext, model:AdniModel,
         if (future.isDone) {
           val operator = queue.take()
           future.get() match {
-            case csr: psf.FloatPartCSRResult => executor.execute(new Task(operator, pkey, csr, result, original, biject))
+            case csr: FloatPartCSRResult => executor.execute(new Task(operator, pkey, csr, result, original, biject))
             case _ => throw new AngelException("should by FloatPartCSRResult")
           }
           futures.remove(pkey)
@@ -149,7 +151,7 @@ class AdLearner(ctx:TaskContext, model:AdniModel,
 
   def ConditionsCheck(epochNum:Int): Unit = {
     val sVec = model.mVec.get(new psf.SSetFunc(model.mVec.getMatrixId(), locals)) match {
-      case r : psf.ListAggrResult => r.getResult
+      case r : ListAggrResult => r.getResult
       case _ => throw new AngelException("should be ListAggrResult")
     }
       var j = model.k
