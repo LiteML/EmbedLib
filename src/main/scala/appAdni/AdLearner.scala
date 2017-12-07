@@ -6,6 +6,7 @@ import java.util.{Collections, Random}
 import java.util.concurrent.{ExecutorService, Executors, Future, LinkedBlockingQueue}
 
 import adni.psf.{FloatPartCSRResult, GetFloatPartFunc, ListAggrResult}
+import adni.utils.AtomicFloat
 import com.tencent.angel.PartitionKey
 import com.tencent.angel.conf.AngelConf
 import com.tencent.angel.exception.AngelException
@@ -91,14 +92,14 @@ class AdLearner(ctx:TaskContext, model:AdniModel,
     * Matrix Multiplication
     */
   def scheduleMultiply(): Unit = {
-    class Task(operator: AdOperator, pkey:PartitionKey, csr:FloatPartCSRResult, result :Array[utils.AtomicFloat], original:Array[Float], biject:Map[Int,Int]) extends Thread {
+    class Task(operator: AdOperator, pkey:PartitionKey, csr:FloatPartCSRResult, result :Array[AtomicFloat], original:Array[Float], biject:Map[Int,Int]) extends Thread {
       override def run():Unit = {
         operator.multiply(csr,result,original, biject)
         queue.add(operator)
       }
     }
     val original = Array.ofDim[Float](data.numOfRows)
-    val result = Array.fill(data.numOfRows)(new utils.AtomicFloat())
+    val result = Array.fill(data.numOfRows)(new AtomicFloat())
     val client = PSAgentContext.get().getMatrixTransportClient
     val func = new GetFloatPartFunc(null)
     for (i <- 0 until model.threadNum) queue.add(new AdOperator(data, model))

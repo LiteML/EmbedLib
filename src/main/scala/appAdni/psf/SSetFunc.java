@@ -2,8 +2,8 @@ package appAdni.psf;
 
 import adni.psf.ListAggrResult;
 import adni.psf.ListPartitionAggrResult;
-import appAdni.utils.SimpleEntry;
-import appAdni.utils.util;
+import adni.utils.SimpleEntry;
+import adni.utils.util;
 import com.tencent.angel.PartitionKey;
 import com.tencent.angel.exception.AngelException;
 import com.tencent.angel.ml.matrix.psf.get.base.*;
