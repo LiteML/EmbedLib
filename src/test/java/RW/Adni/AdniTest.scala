@@ -1,15 +1,14 @@
 package RW.Adni
-import adni.{AdTrainTask, AdniModel}
+import appAdni.{AdTrainTask, AdniModel}
 import com.tencent.angel.client.{AngelClient, AngelClientFactory}
 import com.tencent.angel.conf.AngelConf
-import com.tencent.angel.ml.conf.MLConf
 import org.apache.commons.logging.{Log, LogFactory}
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.FileSystem
 import org.apache.hadoop.mapreduce.lib.input.CombineTextInputFormat
 import org.apache.log4j.PropertyConfigurator
 import org.junit.{Before, Test}
-import adni.AdniModel._
+import appAdni.AdniModel._
 
 /**
   * Created by chris on 11/28/17.
@@ -24,7 +23,7 @@ class AdniTest {
   LOG.info(System.getProperty("user.dir"))
   @Before
   def setup(): Unit = {
-    val inputPath: String = "./src/test/data/Adni/adni_data.csv"
+    val inputPath: String = "./src/test/data/Adni/adni_app.csv"
 
     // Set basic configuration keys
     conf.setBoolean("mapred.mapper.new-api", true)
@@ -52,13 +51,10 @@ class AdniTest {
     val V = 114729
     val k = 500
     val u = 110466
-    val s = 113322
     val b = 1
-
 
     conf.setInt(nodes, V)
     conf.setLong(Vol, vol)
-    conf.setInt(S,s)
     conf.setInt(K, k)
     conf.setInt(B, b)
     conf.setInt(U, u)

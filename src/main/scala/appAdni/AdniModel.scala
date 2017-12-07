@@ -1,17 +1,17 @@
-package adni
+package appAdni
 
-import com.tencent.angel.ml.feature.LabeledData
-import com.tencent.angel.ml.model.{MLModel, PSModel}
-import com.tencent.angel.ml.predict.PredictResult
-import com.tencent.angel.worker.storage.DataBlock
-import com.tencent.angel.worker.task.TaskContext
-import org.apache.hadoop.conf.Configuration
-import AdniModel._
+import appAdni.AdniModel._
 import com.tencent.angel.conf.AngelConf.ANGEL_PS_NUMBER
 import com.tencent.angel.ml.conf.MLConf
 import com.tencent.angel.ml.conf.MLConf.{DEFAULT_ML_PART_PER_SERVER, DEFAULT_ML_WORKER_THREAD_NUM, ML_PART_PER_SERVER, ML_WORKER_THREAD_NUM}
+import com.tencent.angel.ml.feature.LabeledData
 import com.tencent.angel.ml.math.vector.{DenseFloatVector, DenseIntVector}
+import com.tencent.angel.ml.model.{MLModel, PSModel}
+import com.tencent.angel.ml.predict.PredictResult
 import com.tencent.angel.protobuf.generated.MLProtos.RowType
+import com.tencent.angel.worker.storage.DataBlock
+import com.tencent.angel.worker.task.TaskContext
+import org.apache.hadoop.conf.Configuration
 
 /**
   * Created by chris on 10/30/17.
@@ -38,14 +38,11 @@ object AdniModel {
 
   val U = "ml.adni.u"
 
-  val S = "ml.adni.s"
-
   val nodes = "ml.adni.V"
 
   val Vol = "ml.adni.vol"
 
   val Shrink = "ml.adni.shrink"
-
 
   val Feq = "ml.adni.update"
 
@@ -72,8 +69,7 @@ class AdniModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel(c
   val V:Int = conf.getInt(nodes, 0)
   val vol:Long = conf.getLong(Vol, 0l)
   val feq:Int = if(conf.getInt(Feq, 3) % 2 == 0) conf.getInt(Feq, 3) - 1 else conf.getInt(Feq, 3)
-  val s:Int = conf.getInt(S,10)
-  val shrink:Float = conf.getFloat(Shrink,0.5f)
+  val shrink:Float = conf.getFloat(Shrink,1f)
 
   val k:Int = conf.getInt(K, 0)
   val b:Int = Math.min(conf.getInt(B, 0),61)
