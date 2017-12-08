@@ -42,8 +42,6 @@ object AdniModel {
 
   val Vol = "ml.adni.vol"
 
-  val Shrink = "ml.adni.shrink"
-
   val Feq = "ml.adni.update"
 
   // model setting
@@ -69,7 +67,6 @@ class AdniModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel(c
   val V:Int = conf.getInt(nodes, 0)
   val vol:Long = conf.getLong(Vol, 0l)
   val feq:Int = if(conf.getInt(Feq, 3) % 2 == 0) conf.getInt(Feq, 3) - 1 else conf.getInt(Feq, 3)
-  val shrink:Float = conf.getFloat(Shrink,1f)
 
   val k:Int = conf.getInt(K, 0)
   val b:Int = Math.min(conf.getInt(B, 0),61)
