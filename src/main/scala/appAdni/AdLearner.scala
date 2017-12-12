@@ -157,48 +157,50 @@ class AdLearner(ctx:TaskContext, model:AdniModel,
     */
 
   def ConditionsCheck(epochNum:Int): Unit = {
-    val sVec = model.mVec.get(new psf.SSetFunc(model.mVec.getMatrixId(), locals)) match {
-      case r : ListAggrResult => r.getResult
-      case _ => throw new AngelException("should be ListAggrResult")
-    }
+    if(!qualify) {
+      val sVec = model.mVec.get(new psf.SSetFunc(model.mVec.getMatrixId(), locals)) match {
+        case r : ListAggrResult => r.getResult
+        case _ => throw new AngelException("should be ListAggrResult")
+      }
 
-    LOG.info(s"${ctx.getTaskIndex}: sVec_length: ${sVec.length}")
-    var j = (model.k / ratio).toInt + 1
-    var userNum:Int = sVec.slice(0, j).count(p=> !comp.contains(p.getKey))
-    var degreeSum = sVec.slice(0, j).map{f =>
+      LOG.info(s"${ctx.getTaskIndex}: sVec_length: ${sVec.length}")
+      var j = (model.k / ratio).toInt + 1
+      var userNum:Int = sVec.slice(0, j).count(p=> !comp.contains(p.getKey))
+      var degreeSum = sVec.slice(0, j).map{f =>
         f.getValue.getKey.toFloat
       }.sum
 
-    breakable {
-      while (j < sVec.size()) {
-        degreeSum += sVec(j).getValue.getKey
-        val cent = if (!comp.contains(sVec(j).getKey)) 1 else 0
-        userNum += cent
-        val condition1 = userNum >= ( model.k / ratio)
-        val condition2 = (degreeSum >= math.pow(2, model.b) / ratio) && (degreeSum < model.vol * 5.0 / 6 / ratio)
-        val condition3 = sVec(j).getValue.getValue >= (1f / model.c4) * (model.l + 2) * math.pow(2, model.b)
-        qualify = condition1 && condition2 && condition3
-        j += 1
-        if(qualify){
+      breakable {
+        while (j < sVec.size()) {
+          degreeSum += sVec(j).getValue.getKey
+          val cent = if (!comp.contains(sVec(j).getKey)) 1 else 0
+          userNum += cent
+          val condition1 = userNum >= ( model.k / ratio)
+          val condition2 = (degreeSum >= math.pow(2, model.b) / ratio) && (degreeSum < model.vol * 5.0 / 6 / ratio)
+          val condition3 = sVec(j).getValue.getValue >= (1f / model.c4) * (model.l + 2) * math.pow(2, model.b)
+          qualify = condition1 && condition2 && condition3
+          j += 1
+          if(qualify){
             break
           }
         }
       }
-    if(qualify) {
-      userList = sVec.slice(0, j + 1).flatMap{f=>
-        if(!comp.contains(f.getKey))
-          Some(f.getKey)
-        else
-          None
+      if(qualify) {
+        userList = sVec.slice(0, j + 1).flatMap{f=>
+          if(!comp.contains(f.getKey))
+            Some(f.getKey)
+          else
+            None
+        }
       }
-    }
 
-    if(epochNum == model.epoch && userList == null) {
-      userList = sVec.slice(0, model.k + 1).flatMap{f=>
-        if(!comp.contains(f.getKey))
-          Some(f.getKey)
-        else
-          None
+      if(epochNum == model.epoch && userList == null) {
+        userList = sVec.slice(0, model.k + 1).flatMap{f=>
+          if(!comp.contains(f.getKey))
+            Some(f.getKey)
+          else
+            None
+        }
       }
     }
   }
@@ -228,28 +230,27 @@ class AdLearner(ctx:TaskContext, model:AdniModel,
   def train() :Unit = {
     breakable{
       (1 to model.epoch) foreach{epoch =>
-      scheduleMultiply()
+      if(!qualify) scheduleMultiply()
       if(epoch % model.feq == 0) {
         if(locals.nonEmpty) {
           ConditionsCheck(epoch)
           val indiLast : DenseIntVector = model.indicator.getRow(0)
           val last:Int = indiLast.get(0)
-          if(qualify){
+          while(qualify){
             val indi = new DenseIntVector(model.ps)
             locals.foreach{ i =>
               indi.plusBy(i, 1)
             }
             model.indicator.increment(0,indi)
             model.indicator.clock().get()
+            val indis:DenseIntVector = model.indicator.getRow(0)
+            val flags = (0 until model.ps) map { f =>
+              indis.get(f) > 0
+            }
+            if(!flags.contains(false)) break()
           }
         }
-        val indis:DenseIntVector = model.indicator.getRow(0)
-        val flags = (0 until model.ps) map { f =>
-          indis.get(f) > 0
-        }
-        if(!flags.contains(false)) {
-          break()
-        }
+
         }
         ctx.incEpoch()
       }
