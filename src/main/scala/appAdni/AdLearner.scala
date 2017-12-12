@@ -234,13 +234,15 @@ class AdLearner(ctx:TaskContext, model:AdniModel,
       if(epoch % model.feq == 0) {
         if(locals.nonEmpty) {
           ConditionsCheck(epoch)
-          while(qualify){
+          if(qualify) {
             val indi = new DenseIntVector(model.ps)
             locals.foreach{ i =>
               indi.plusBy(i, 1)
             }
             model.indicator.increment(0,indi)
             model.indicator.clock().get()
+          }
+          while(qualify){
             val indis:DenseIntVector = model.indicator.getRow(0)
             val flags = (0 until model.ps) map { f =>
               indis.get(f) > 0
