@@ -234,8 +234,6 @@ class AdLearner(ctx:TaskContext, model:AdniModel,
       if(epoch % model.feq == 0) {
         if(locals.nonEmpty) {
           ConditionsCheck(epoch)
-          val indiLast : DenseIntVector = model.indicator.getRow(0)
-          val last:Int = indiLast.get(0)
           while(qualify){
             val indi = new DenseIntVector(model.ps)
             locals.foreach{ i =>
