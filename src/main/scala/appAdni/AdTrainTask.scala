@@ -21,6 +21,7 @@ class AdTrainTask(val ctx: TaskContext) extends BaseTask[LongWritable, Text, App
   var did = 0
   var rowId:Array[Int] = _
   val seeds:mutable.HashSet[Int] = mutable.HashSet()
+  val comp:mutable.HashSet[Int] = mutable.HashSet()
 
   override
   def parse(key: LongWritable, value: Text): AppRow[Float] = {
@@ -50,7 +51,8 @@ class AdTrainTask(val ctx: TaskContext) extends BaseTask[LongWritable, Text, App
     (0 until did) foreach{i =>
       val row = incidence.get(i)
       rowId(i) = row.rowId
-      if(row.flag) seeds.add(row.rowId)
+      if(row.seedFlag) seeds.add(row.rowId)
+      if(row.comFlag) comp.add(row.rowId)
       (0 until row.len) foreach{j =>
         values(count) = row.values(j)
         columns(count) = row.columns(j)
@@ -67,7 +69,7 @@ class AdTrainTask(val ctx: TaskContext) extends BaseTask[LongWritable, Text, App
     val model = new AdniModel(ctx.getConf, ctx)
     LOG.info(s"V=${model.V} K=${model.k} PartRows=$did Entries=$N" + s" threadNum=${model.threadNum}")
     val data = build((did, model.V))
-    val learner = new AdLearner(ctx, model, data, rowId, seeds)
+    val learner = new AdLearner(ctx, model, data, rowId, seeds, comp)
     learner.initialize()
     learner.train()
     if(model.save) learner.saveResult()

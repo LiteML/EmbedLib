@@ -36,8 +36,6 @@ object AdniModel {
 
   val B = "ml.adni.b"
 
-  val U = "ml.adni.u"
-
   val nodes = "ml.adni.V"
 
   val Vol = "ml.adni.vol"
@@ -66,14 +64,13 @@ class AdniModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel(c
   val phi:Float = conf.getFloat(Phi, 0.8f)
   val V:Int = conf.getInt(nodes, 0)
   val vol:Long = conf.getLong(Vol, 0l)
-  val feq:Int = if(conf.getInt(Feq, 3) % 2 == 0) conf.getInt(Feq, 3) - 1 else conf.getInt(Feq, 3)
+  val feq:Int = conf.getInt(Feq, 3)
 
   val k:Int = conf.getInt(K, 0)
   val b:Int = Math.min(conf.getInt(B, 0),61)
-  val u:Int = conf.getInt(U, 0)
   this.check()
   val (l, tlast, epslion) = lTlastEpsilon()
-  val epoch = conf.getInt(MLConf.ML_EPOCH_NUM, tlast)
+  val epoch:Int = conf.getInt(MLConf.ML_EPOCH_NUM, tlast)
 
 
   val save:Boolean = conf.getBoolean(SAVE_MODEL, true)
@@ -86,7 +83,13 @@ class AdniModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel(c
     .setOplogType("DENSE_FLOAT")
   addPSModel(mVec)
 
-  val indicator:PSModel[DenseIntVector] = PSModel[DenseIntVector](indi, 1, 1, 1, 1)
+  val ps:Int = if(V % psNum == 0){
+    psNum
+  } else {
+    psNum + 1
+  }
+
+  val indicator:PSModel[DenseIntVector] = PSModel[DenseIntVector](indi, 1, ps, 1, ps)
     .setRowType(RowType.T_INT_DENSE)
     .setOplogType("DENSE_INT")
 
@@ -98,7 +101,6 @@ class AdniModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel(c
   }
 
   def check():Unit = {
-    if(k > u) throw new Exception("diffusion users should be less than users in total")
     if(c2 < 2*c4) throw new Exception("condition 2 violated")
     if(c6 < 2*c5) throw new Exception("condition 3 violated")
     if(c3 < 8*c5) throw new Exception("condition 4 violated")

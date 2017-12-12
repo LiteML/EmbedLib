@@ -35,7 +35,7 @@ import scala.util.control.Breaks._
   */
 class AdLearner(ctx:TaskContext, model:AdniModel,
                 data:CSRMatrix[Float], rowId: Array[Int],
-                seeds:Set[Int]) extends MLLearner(ctx){
+                seeds:Set[Int], comp:Set[Int]) extends MLLearner(ctx){
   val LOG:Log = LogFactory.getLog(classOf[AdLearner])
   val pkeys:util.List[PartitionKey]= PSAgentContext.get().getMatrixPartitionRouter.
     getPartitionKeyList(model.mVec.getMatrixId())
@@ -44,16 +44,19 @@ class AdLearner(ctx:TaskContext, model:AdniModel,
   val numOfParts:Int = pkeys.length
   val numOfWorkers:Int = ctx.getTotalTaskNum
   val tmp:ArrayBuffer[Int] = ArrayBuffer[Int]()
+  var partLen:Int = 0
   (0 until numOfParts by numOfWorkers) foreach {i =>
     val z = i + ctx.getTaskIndex
     if(z < numOfParts) {
       tmp.append(pkeys.get(z).getPartitionId)
+      partLen += (pkeys.get(z).getEndCol - pkeys.get(z).getStartCol).toInt
     }
   }
   val locals:Array[Int] = tmp.toArray
   var trunc:Array[Float] =_
   val biject:Map[Int,Int] = rowId.zipWithIndex.toMap
   var userList:mutable.Buffer[Integer] = _
+  val ratio:Float = model.V.toFloat / partLen
   var qualify:Boolean = false
 
 
@@ -82,6 +85,9 @@ class AdLearner(ctx:TaskContext, model:AdniModel,
     model.mVec.increment(0,sedVec)
     model.mVec.clock().get()
     ctx.incEpoch()
+    locals.foreach{f =>
+      LOG.info(s"******************${ctx.getTaskIndex}\tpartitionKey: $f")
+    }
   }
 
   val queue:LinkedBlockingQueue[AdOperator] = new LinkedBlockingQueue[AdOperator]()
@@ -155,30 +161,32 @@ class AdLearner(ctx:TaskContext, model:AdniModel,
       case r : ListAggrResult => r.getResult
       case _ => throw new AngelException("should be ListAggrResult")
     }
-      var j = model.k
-      var userNum:Int = sVec.slice(0, j).count(p=> !seeds.contains(p.getKey))
-      var degreeSum = sVec.slice(0, j).map{f =>
+
+    LOG.info(s"${ctx.getTaskIndex}: sVec_length: ${sVec.length}")
+    var j = (model.k / ratio).toInt + 1
+    var userNum:Int = sVec.slice(0, j).count(p=> !comp.contains(p.getKey))
+    var degreeSum = sVec.slice(0, j).map{f =>
         f.getValue.getKey.toFloat
       }.sum
-      breakable {
-        while (j < sVec.size()) {
-          degreeSum += sVec(j).getValue.getKey
-          val cent = if (!seeds.contains(sVec(j).getKey)) 1 else 0
-          userNum += cent
-          val condition1 = userNum >= (model.k / numOfParts)
-          val condition2 = (degreeSum >= math.pow(2, model.b) / numOfParts ) && (degreeSum < model.vol * 5.0 / 6 / numOfParts)
-          val condition3 = sVec(j).getValue.getValue >= (1f / model.c4) * (model.l + 2) * math.pow(2, model.b)
-          qualify = condition1 && condition2 && condition3
-          j += 1
-          if(qualify){
+
+    breakable {
+      while (j < sVec.size()) {
+        degreeSum += sVec(j).getValue.getKey
+        val cent = if (!comp.contains(sVec(j).getKey)) 1 else 0
+        userNum += cent
+        val condition1 = userNum >= ( model.k / ratio)
+        val condition2 = (degreeSum >= math.pow(2, model.b) / ratio) && (degreeSum < model.vol * 5.0 / 6 / ratio)
+        val condition3 = sVec(j).getValue.getValue >= (1f / model.c4) * (model.l + 2) * math.pow(2, model.b)
+        qualify = condition1 && condition2 && condition3
+        j += 1
+        if(qualify){
             break
           }
         }
       }
-
     if(qualify) {
       userList = sVec.slice(0, j + 1).flatMap{f=>
-        if(!seeds.contains(f.getKey))
+        if(!comp.contains(f.getKey))
           Some(f.getKey)
         else
           None
@@ -187,7 +195,7 @@ class AdLearner(ctx:TaskContext, model:AdniModel,
 
     if(epochNum == model.epoch && userList == null) {
       userList = sVec.slice(0, model.k + 1).flatMap{f=>
-        if(!seeds.contains(f.getKey))
+        if(!comp.contains(f.getKey))
           Some(f.getKey)
         else
           None
@@ -227,15 +235,20 @@ class AdLearner(ctx:TaskContext, model:AdniModel,
           val indiLast : DenseIntVector = model.indicator.getRow(0)
           val last:Int = indiLast.get(0)
           if(qualify){
-            val indi = new DenseIntVector(1)
-            indi.plusBy(0, 1)
+            val indi = new DenseIntVector(model.ps)
+            locals.foreach{ i =>
+              indi.plusBy(i, 1)
+            }
             model.indicator.increment(0,indi)
             model.indicator.clock().get()
           }
-          val indiNow: DenseIntVector = model.indicator.getRow(0)
-          val now:Int = indiNow.get(0)
-          if(now - last == math.min(numOfWorkers, numOfParts))
-            break()
+        }
+        val indis:DenseIntVector = model.indicator.getRow(0)
+        val flags = (0 until model.ps) map { f =>
+          indis.get(f) > 0
+        }
+        if(!flags.contains(false)) {
+          break()
         }
         }
         ctx.incEpoch()

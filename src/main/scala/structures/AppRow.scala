@@ -10,7 +10,8 @@ class AppRow[T:ClassTag](implicit ev: String => T) {
   var values:Array[T] = _
   var columns:Array[Int] = _
   var len:Int = _
-  var flag:Boolean = _
+  var seedFlag:Boolean = _
+  var comFlag:Boolean = _
 
   def this(str:String)(implicit ev: String => T) {
     this()
@@ -18,9 +19,10 @@ class AppRow[T:ClassTag](implicit ev: String => T) {
   }
 
   def parse(str:String)(ev:String => T) :Unit = {
-    flag = if(str.split(" ")(0) == "1") true else false
-    rowId = Integer.parseInt(str.split(" ")(1))
-    val features = str.split(" ").slice(2, str.split(" ").length)
+    seedFlag = if(str.split(" ")(0) == "1") true else false
+    comFlag = if(str.split(" ")(1) == "1") true else false
+    rowId = Integer.parseInt(str.split(" ")(2))
+    val features = str.split(" ").slice(3, str.split(" ").length)
     len = features.length
     values = Array.ofDim[T](len)
     columns = Array.ofDim[Int](len)

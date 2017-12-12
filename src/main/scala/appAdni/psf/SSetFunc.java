@@ -1,7 +1,6 @@
 package appAdni.psf;
 
 import adni.psf.ListAggrResult;
-import adni.psf.ListPartitionAggrResult;
 import adni.utils.SimpleEntry;
 import adni.utils.util;
 import com.tencent.angel.PartitionKey;
