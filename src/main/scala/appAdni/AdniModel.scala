@@ -42,6 +42,8 @@ object AdniModel {
 
   val Feq = "ml.adni.update"
 
+  val Trunc = "ml.adni.trunc"
+
   // model setting
   val model = "membership"
 
@@ -65,6 +67,7 @@ class AdniModel(conf: Configuration, _ctx: TaskContext = null) extends MLModel(c
   val V:Int = conf.getInt(nodes, 0)
   val vol:Long = conf.getLong(Vol, 0l)
   val feq:Int = conf.getInt(Feq, 3)
+  val trunc:Boolean = conf.getBoolean(Trunc, true)
 
   val k:Int = conf.getInt(K, 0)
   val b:Int = Math.min(conf.getInt(B, 0),61)

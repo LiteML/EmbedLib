@@ -39,26 +39,25 @@ class AdLearner(ctx:TaskContext, model:AdniModel,
   val LOG:Log = LogFactory.getLog(classOf[AdLearner])
   val pkeys:util.List[PartitionKey]= PSAgentContext.get().getMatrixPartitionRouter.
     getPartitionKeyList(model.mVec.getMatrixId())
-
-  Collections.shuffle(pkeys, new Random(0))
   val numOfParts:Int = pkeys.length
   val numOfWorkers:Int = ctx.getTotalTaskNum
   val tmp:ArrayBuffer[Int] = ArrayBuffer[Int]()
   var partLen:Int = 0
-  (0 until numOfParts by numOfWorkers) foreach {i =>
-    val z = i + ctx.getTaskIndex
-    if(z < numOfParts) {
-      tmp.append(pkeys.get(z).getPartitionId)
-      partLen += (pkeys.get(z).getEndCol - pkeys.get(z).getStartCol).toInt
+    (0 until numOfParts by numOfWorkers) foreach {i =>
+      val z = i + ctx.getTaskIndex
+      if(z < numOfParts) {
+        tmp.append(pkeys.get(z).getPartitionId)
+        partLen += (pkeys.get(z).getEndCol - pkeys.get(z).getStartCol).toInt
+      }
     }
-  }
+
   val locals:Array[Int] = tmp.toArray
   var trunc:Array[Float] =_
   val biject:Map[Int,Int] = rowId.zipWithIndex.toMap
   var userList:mutable.Buffer[Integer] = _
   val ratio:Float = model.V.toFloat / partLen
   var qualify:Boolean = false
-
+  LOG.info(s"******************${ctx.getTaskIndex}\tpartLen: $partLen")
 
   override
   def train(train: DataBlock[LabeledData], vali: DataBlock[LabeledData]): MLModel = ???
@@ -73,7 +72,7 @@ class AdLearner(ctx:TaskContext, model:AdniModel,
     degree.indices.foreach{ i =>
       degVec.plusBy(rowId(i), degree(i))
     }
-    trunc = degree.map{f =>
+    if(model.trunc) trunc = degree.map{f =>
       f * model.epslion
     }
     MMatrix(degree)
@@ -82,6 +81,8 @@ class AdLearner(ctx:TaskContext, model:AdniModel,
     seeds.foreach{ i =>
       sedVec.plusBy(i,1f)
     }
+    LOG.info(s"******************${ctx.getTaskIndex}\tseed size: ${seeds.size()}")
+
     model.mVec.increment(0,sedVec)
     model.mVec.clock().get()
     ctx.incEpoch()
@@ -137,15 +138,21 @@ class AdLearner(ctx:TaskContext, model:AdniModel,
     for (i <- 0 until model.threadNum) queue.take()
 
     val update:DenseFloatVector = new DenseFloatVector(model.V)
+    if(model.trunc) {
+      (0 until data.numOfRows) foreach { i =>
+        if(result(i).get >= trunc(i)) {
+          update.set(rowId(i),result(i).get - original(i))
 
-    (0 until data.numOfRows) foreach { i =>
-      if(result(i).get >= trunc(i)) {
-        update.set(rowId(i),result(i).get - original(i))
-
-      } else {
-        update.set(rowId(i), -original(i))
+        } else {
+          update.set(rowId(i), -original(i))
+        }
+      }
+    } else {
+      (0 until data.numOfRows) foreach { i =>
+          update.set(rowId(i),result(i).get - original(i))
       }
     }
+
 
     model.mVec.increment(0, update)
     model.mVec.clock().get()
@@ -157,7 +164,6 @@ class AdLearner(ctx:TaskContext, model:AdniModel,
     */
 
   def ConditionsCheck(epochNum:Int): Unit = {
-    if(!qualify) {
       val sVec = model.mVec.get(new psf.SSetFunc(model.mVec.getMatrixId(), locals)) match {
         case r : ListAggrResult => r.getResult
         case _ => throw new AngelException("should be ListAggrResult")
@@ -195,7 +201,7 @@ class AdLearner(ctx:TaskContext, model:AdniModel,
       }
 
       if(epochNum == model.epoch && userList == null) {
-        userList = sVec.slice(0, model.k + 1).flatMap{f=>
+        userList = sVec.slice(0, j + 1).flatMap{f=>
           if(!comp.contains(f.getKey))
             Some(f.getKey)
           else
@@ -203,7 +209,6 @@ class AdLearner(ctx:TaskContext, model:AdniModel,
         }
       }
     }
-  }
 
   /**
     * Get the M matrix for Multiplication
@@ -230,27 +235,34 @@ class AdLearner(ctx:TaskContext, model:AdniModel,
   def train() :Unit = {
     breakable{
       (1 to model.epoch) foreach{epoch =>
-      if(!qualify) scheduleMultiply()
-      if(epoch % model.feq == 0) {
-        if(locals.nonEmpty) {
-          ConditionsCheck(epoch)
-          if(qualify) {
-            val indi = new DenseIntVector(model.ps)
-            locals.foreach{ i =>
+        scheduleMultiply()
+        if(epoch % model.feq == 0) {
+          if(locals.nonEmpty) {
+            ConditionsCheck(epoch)
+            if(qualify) {
+              val indi = new DenseIntVector(model.ps)
+              locals.foreach{ i =>
               indi.plusBy(i, 1)
             }
-            model.indicator.increment(0,indi)
-            model.indicator.clock().get()
+              model.indicator.increment(0,indi)
+              model.indicator.clock().get()
           }
-          while(qualify){
-            val indis:DenseIntVector = model.indicator.getRow(0)
-            val flags = (0 until model.ps) map { f =>
-              indis.get(f) > 0
+            while(qualify){
+              val indis:DenseIntVector = model.indicator.getRow(0)
+              val flags = (0 until model.ps) map { f =>
+              indis.get(f) >= 1
             }
             if(!flags.contains(false)) break()
           }
         }
-
+      }
+        if(epoch == model.epoch) {
+          val indi = new DenseIntVector(model.ps)
+          locals.foreach{ i =>
+            indi.plusBy(i, 1)
+          }
+          model.indicator.increment(0,indi)
+          model.indicator.clock().get()
         }
         ctx.incEpoch()
       }
